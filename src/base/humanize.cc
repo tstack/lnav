@@ -30,6 +30,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdint>
 
 #include "humanize.hh"
 
@@ -234,14 +235,13 @@ try_from(const string_fragment& sf)
     }
 
     if (md[percent]) {
-        // Return the ratio (e.g. `42%` → 0.42), matching how
-        // humanize handles the other unit families.
+        // In percentage points (e.g. `42%` → 42), which is what format()
+        // takes with a "%" suffix.
         auto scan_res = scn::scan_value<double>(md[percent]->to_string_view());
         if (!scan_res) {
             return std::nullopt;
         }
-        return try_from_result<double>{scan_res->value() / 100.0,
-                                       PERCENT_SUFFIX};
+        return try_from_result<double>{scan_res->value(), PERCENT_SUFFIX};
     }
 
     // Apply a single-letter SI prefix multiplier to `retval` based on
@@ -479,12 +479,37 @@ si_scale(double value, int min_exp)
     return {value / std::pow(1000.0, exp), SI_PREFIXES[exp + 4]};
 }
 
+// A number as it is shown in a column: a whole number without decimals,
+// anything else with two, or with two significant digits when it would
+// otherwise show as zero.
+std::string
+columnar_number(double value)
+{
+    if (std::isfinite(value) && std::fabs(value) < 1e15
+        && value == std::trunc(value))
+    {
+        return fmt::format(FMT_STRING("{}"), static_cast<int64_t>(value));
+    }
+    if (value != 0.0 && std::fabs(value) < 0.01) {
+        return fmt::format(FMT_STRING("{:.2g}"), value);
+    }
+    return fmt::format(FMT_STRING("{:.2f}"), value);
+}
+
 }  // namespace
 
 std::string
 format(double value, string_fragment suffix, alignment align)
 {
     if (suffix.empty()) {
+        if (align == alignment::columnar) {
+            return columnar_number(value);
+        }
+        if (std::isfinite(value) && std::fabs(value) < 1e15
+            && value == std::trunc(value))
+        {
+            return fmt::format(FMT_STRING("{}"), static_cast<int64_t>(value));
+        }
         return fmt::format(FMT_STRING("{:.6g}"), value);
     }
     // File size — delegate to the existing int64-based formatter.
@@ -506,11 +531,52 @@ format(double value, string_fragment suffix, alignment align)
                    std::chrono::duration<double>{value})
             .to_string();
     }
+    // Percentage points, without SI prefixes: a whole number as is,
+    // otherwise one decimal, or two significant digits below 1.
+    if (suffix == "%"_frag) {
+        if (align == alignment::columnar) {
+            return columnar_number(value) + "%";
+        }
+        if (!std::isfinite(value) || std::fabs(value) >= 1e15) {
+            return fmt::format(FMT_STRING("{:.3g}%"), value);
+        }
+        if (value == std::trunc(value)) {
+            return fmt::format(FMT_STRING("{}%"), static_cast<int64_t>(value));
+        }
+        if (std::fabs(value) >= 1.0) {
+            return fmt::format(FMT_STRING("{:.1f}%"), value);
+        }
+        // Fixed notation, so a tiny value doesn't come out as an exponent,
+        // without the zeros a rounded value can end with.
+        const auto decimals = std::min(
+            15, 1 - static_cast<int>(std::floor(std::log10(std::fabs(value)))));
+        auto retval = fmt::format(FMT_STRING("{:.{}f}"), value, decimals);
+        if (retval.find('.') != std::string::npos) {
+            while (retval.back() == '0') {
+                retval.pop_back();
+            }
+            if (retval.back() == '.') {
+                retval.pop_back();
+            }
+        }
+        if (retval == "-0") {
+            retval = "0";
+        }
+        retval.push_back('%');
+        return retval;
+    }
     // Any other suffix gets up-only SI scaling so large counts /
     // rates / frequencies render compactly (e.g. `1.2kHz`,
     // `15kqueries`) while values below the base unit pass through
     // unchanged.
     const auto sr = si_scale(value, 0);
+    if (align == alignment::columnar) {
+        // A blank where there is no prefix, so the units line up.
+        return fmt::format(FMT_STRING("{}{}{}"),
+                           columnar_number(sr.value),
+                           sr.prefix[0] == '\0' ? " " : sr.prefix,
+                           suffix.to_string());
+    }
     return fmt::format(
         FMT_STRING("{:.3g}{}{}"), sr.value, sr.prefix, suffix.to_string());
 }

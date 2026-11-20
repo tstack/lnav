@@ -46,6 +46,7 @@
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/date_time_scanner.hh"
 #include "base/file_range.hh"
+#include "base/humanize.hh"
 #include "base/intern_string.hh"
 #include "base/lazy_vector.hh"
 #include "base/log_level_enum.hh"
@@ -217,7 +218,13 @@ struct logline_value_stats {
 
     void merge(const logline_value_stats& other);
 
-    void add_value(double value);
+    /** Whether add_value() also feeds the t-digest behind the percentiles. */
+    enum class with_digest : bool {
+        no,
+        yes,
+    };
+
+    void add_value(double value, with_digest wd = with_digest::yes);
 
     // Feed a non-numeric cell into the per-column distinct-count
     // estimator.  Lazy-initializes `lvs_distinct` on first call so
@@ -252,6 +259,133 @@ struct logline_value_stats {
     // typical metrics text columns (HTTP methods, status codes,
     // hostnames, op IDs all ≪ 2^52 — the post-XXH3 ceiling).
     std::optional<hll::HyperLogLog> lvs_distinct;
+};
+
+/**
+ * The metrics seen in a file whose lines are each one sample of a metric:
+ * the stats for each metric's values, in the order the metrics were first
+ * seen.  The stats leave out the t-digest, since a file can have thousands
+ * of metrics and a digest reserves about 13KB.
+ *
+ * A counter's samples are running totals, so what it keeps for one is the
+ * change since the previous sample of the same metric: the stats are of the
+ * changes.  The previous sample is the one before it in the file.  The
+ * change on a given line is not kept, see logfile::metric_sample_as_shown().
+ */
+class metric_table {
+public:
+    /**
+     * Adds the sample on the line at `line_index`.  Returns the change for a
+     * counter, or nullopt for a gauge or for a counter's first sample.  The
+     * unit is what the value is shown with, see
+     * logline_value_meta::to_humanized_value(), which sets how wide the
+     * metric's column is.
+     */
+    std::optional<double> add_sample(intern_string_t name,
+                                     double value,
+                                     bool counter,
+                                     size_t line_index,
+                                     std::chrono::microseconds time,
+                                     string_fragment unit_suffix,
+                                     double unit_divisor);
+
+    /**
+     * Takes in what a later pass over the same file saw.  `other` must
+     * have been filled in with this table as its prior.
+     */
+    void merge(const metric_table& other);
+
+    void clear();
+
+    /**
+     * Sets the table of the passes before this one, which is where the
+     * previous sample of a counter is found when this pass hasn't seen one.
+     */
+    void set_prior(const metric_table* prior) { this->mt_prior = prior; }
+
+    /**
+     * Undoes the samples on lines from `line_count` on, which are being
+     * dropped from the index.  Only the last sample added can be undone,
+     * which covers a line dropped right after it was scanned.
+     */
+    void drop_samples_from(size_t line_count);
+
+    /**
+     * Gives the sample on the line at `line_index`, if it is the last one
+     * added, the time the line ended up with, which differs from the scanned
+     * one when the line was out of order.
+     */
+    void retime_sample(size_t line_index, std::chrono::microseconds time);
+
+    /**
+     * Notes that lines were dropped from the front, which can leave a
+     * counter's earliest remaining sample without a change.
+     */
+    void discard_front_lines();
+
+    bool empty() const { return this->mt_names.empty(); }
+
+    /** The metrics, in the order they were first seen. */
+    const std::vector<intern_string_t>& get_names() const
+    {
+        return this->mt_names;
+    }
+
+    std::optional<size_t> slot_for(intern_string_t name) const;
+
+    const logline_value_stats* stats_for(intern_string_t name) const;
+
+    const logline_value_stats& stats_at(size_t slot) const
+    {
+        return this->mt_slot_info[slot].si_stats;
+    }
+
+    bool is_counter(intern_string_t name) const;
+
+    /** The times of the first and last samples of a metric. */
+    struct time_range {
+        std::chrono::microseconds tr_first;
+        std::chrono::microseconds tr_last;
+    };
+
+    std::optional<time_range> time_range_for(intern_string_t name) const;
+
+    /**
+     * Changes whenever the table does, so what is worked out from it can be
+     * kept until then.
+     */
+    size_t get_generation() const { return this->mt_generation; }
+
+private:
+    struct slot_info {
+        logline_value_stats si_stats;
+        bool si_counter{false};
+        /** The last sample, for working out a counter's next change. */
+        std::optional<double> si_last;
+        /** When the metric was first and last sampled. */
+        std::optional<time_range> si_times;
+    };
+
+    size_t insert_slot(intern_string_t name);
+
+    /** The slot as it was before the last sample, to undo that sample. */
+    struct last_sample {
+        size_t ls_line;
+        size_t ls_slot;
+        bool ls_new_slot;
+        slot_info ls_before;
+    };
+
+    std::vector<intern_string_t> mt_names;
+    std::vector<slot_info> mt_slot_info;
+    robin_hood::unordered_map<intern_string_t,
+                              size_t,
+                              intern_hasher,
+                              std::equal_to<intern_string_t>>
+        mt_slots;
+    std::optional<last_sample> mt_last_sample;
+    const metric_table* mt_prior{nullptr};
+    size_t mt_generation{0};
 };
 
 struct pattern_for_lines {
@@ -348,6 +482,8 @@ struct scan_batch_context {
      */
     uint32_t sbc_timestamp_flags{0};
     std::vector<logline_value_stats> sbc_value_stats;
+    /** @see metric_table -- empty unless the format declares a metric. */
+    metric_table sbc_metrics;
     std::vector<time_rollover> sbc_time_rollovers;
     log_opid_state sbc_opids;
     log_thread_id_state sbc_tids;
@@ -824,7 +960,8 @@ struct logline_value_meta {
 
     std::string to_humanized_value(int64_t i) const;
 
-    std::string to_humanized_value(double d) const;
+    std::string to_humanized_value(
+        double d, humanize::alignment align = humanize::alignment::none) const;
 
     intern_string_t lvm_name;
     value_kind_t lvm_kind;

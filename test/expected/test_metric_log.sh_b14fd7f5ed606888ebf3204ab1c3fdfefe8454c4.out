@@ -1,0 +1,14 @@
+format,name,roles
+test_json_metrics_auto_log,body,"[""body""]"
+test_json_metrics_auto_log,level,"[""level""]"
+test_json_metrics_auto_log,log_opid,[]
+test_json_metrics_auto_log,name,"[""metric-name""]"
+test_json_metrics_auto_log,ts,"[""timestamp""]"
+test_json_metrics_auto_log,value,"[""metric-value""]"
+test_json_metrics_log,body,"[""body""]"
+test_json_metrics_log,level,"[""level""]"
+test_json_metrics_log,log_opid,[]
+test_json_metrics_log,name,"[""metric-name""]"
+test_json_metrics_log,ts,"[""timestamp""]"
+test_json_metrics_log,type,"[""metric-kind""]"
+test_json_metrics_log,value,"[""metric-value""]"

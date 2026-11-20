@@ -370,9 +370,18 @@ public:
 
     void clear_bookmark_metadata();
 
+    /**
+     * The lines hidden by filters.  Metric lines folded into the row for
+     * their timestamp are shown in that row, so they are not counted.
+     */
     int get_filtered_count() const
     {
-        return this->lss_index.size() - this->lss_filtered_index.size();
+        const auto folded = this->lss_metric_folds.empty()
+            ? 0
+            : this->lss_metric_folds.back().mf_total;
+
+        return this->lss_index.size() - this->lss_filtered_index.size()
+            - folded;
     }
 
     // Full index size (includes sibling metric rows that are suppressed
@@ -1142,6 +1151,18 @@ private:
 
     bool check_extra_filters(iterator ld, logfile::iterator ll);
 
+    /**
+     * Folds a metric line that passed the filters into the last visible
+     * row when that row is a metric line with the same timestamp, so the
+     * row shows the samples from every file at that time.  Returns true if
+     * the line was folded, in which case it is not added to
+     * lss_filtered_index.
+     */
+    bool fold_metric_sibling(const logfile* lf, logfile::iterator line_iter);
+
+    /** Drops the folds of the rows past the first `filtered_size` rows. */
+    void truncate_metric_folds(size_t filtered_size);
+
     size_t lss_basename_width = 0;
     size_t lss_filename_width = 0;
     line_context_t lss_line_context{line_context_t::none};
@@ -1151,6 +1172,18 @@ private:
     unsigned int lss_all_timestamp_flags{0};
 
     std::vector<uint32_t> lss_filtered_index;
+
+    /**
+     * The rows with metric lines folded into them, by their position in
+     * lss_filtered_index, with the number of lines folded into the rows up
+     * to and including this one.  The folded lines share their row's time,
+     * so the ones kept by a partial rebuild are those of the rows it keeps.
+     */
+    struct metric_fold {
+        uint32_t mf_row;
+        uint32_t mf_total;
+    };
+    std::vector<metric_fold> lss_metric_folds;
 
     // Summaries of fixed-size windows of `lss_filtered_index`, maintained by
     // update_regions().

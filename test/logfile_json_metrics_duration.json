@@ -1,0 +1,6 @@
+{"ts": "2026-11-17T06:00:00Z", "name": "cpu.pct", "value": 7.25, "duration": 1.5}
+{"ts": "2026-11-17T06:00:00Z", "name": "mem.used", "value": 1024, "duration": 2.0}
+{"ts": "2026-11-17T06:00:10Z", "name": "cpu.pct", "value": 9.5, "duration": 4.25}
+{"ts": "2026-11-17T06:00:20Z", "name": "cpu.pct", "value": 12.0, "duration": 8.0}
+{"ts": "2026-11-17T06:00:20Z", "name": "mem.used", "value": 2048, "duration": 3.5}
+{"ts": "2026-11-17T06:00:30Z", "name": "cpu.pct", "value": 6.75, "duration": 16.0}

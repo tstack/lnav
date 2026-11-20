@@ -117,6 +117,10 @@ Each data row is rendered in the LOG view as the timestamp
 followed by a :code:`<column>=<value>` pair for each numeric
 column.  When multiple metric files are loaded and the rows
 share a timestamp, their rows are merged into a single line.
+When metric files are loaded along with other logs, and the top
+of the LOG view is other log messages, the nearest row of metrics
+above them is kept at the top of the view, like a sticky header,
+so the metrics for that time stay in sight.
 
 .. note::
 
@@ -132,6 +136,10 @@ share a timestamp, their rows are merged into a single line.
 The :ref:`all_metrics<table_all_metrics>` SQL virtual table
 provides a long-format view over every open metric file, suitable
 for aggregate queries and for feeding :code:`:spectrogram`.
+
+A JSON-lines log with one sample of a metric per line, where the
+name of the metric is in the data, can be shown the same way by
+giving its format a :ref:`metric<format_metric>` section.
 
 Defining a New Format
 =====================
@@ -658,6 +666,126 @@ object with the following fields:
                 }
             }
         }
+
+.. _format_metric:
+
+:metric: (v0.15.0+) This object makes a JSON-lines format whose messages are
+  each a sample of a metric, with the name and value of the metric in fields
+  of the message, into a metric format.  The samples are then shown like the
+  ones from a :ref:`metric CSV<metrics_log>`: the messages with the same
+  timestamp are folded into a single line in the LOG view, with a
+  :code:`<metric>=<value>` cell and a bar for each metric, and the samples are
+  available in the :ref:`all_metrics<table_all_metrics>` SQL table and to
+  :code:`:spectrogram`.  A metric format does not need a
+  :code:`line-format`: without one, the messages are shown as the timestamp,
+  a space, the name, :code:`=`, and the value.  The following properties are
+  supported:
+
+  :name-field: The field that holds the name of the metric that a message is
+    a sample of.  Labels in the name, as in :code:`cpu{host=a}` or
+    :code:`cpu[host:a]`, are kept, so each set of labels is its own metric.
+  :value-field: The field that holds the sample's value.  It must have a
+    :code:`kind` of :code:`integer` or :code:`float` in the :code:`value`
+    object.  A message without a number in this field is not a sample.
+  :kind-field: The field that says what kind of metric a sample is of, see
+    :code:`counter-kinds`.
+  :counter-kinds: The values of the :code:`kind-field` for a counter, whose
+    samples are running totals.  A counter is shown as the change since its
+    previous sample.  When the total goes down, the counter is taken to have
+    been reset and the new total is the change.  The samples of any other kind
+    are of a gauge and are shown as they are.
+  :display: An array of the metrics to show on the line in the LOG view, in
+    order, and how to show them.  A metric with no sample at a time is left
+    blank so the columns line up from line to line.  Without an entry that is
+    not :code:`hidden`, the line shows the metrics whose values change, as
+    many as fit.  Each entry is an object with the following properties:
+
+    :name: The name of the metric.  It also matches a metric whose name is
+      this followed by labels that start with :code:`[`, :code:`{`,
+      :code:`;`, or :code:`,`.  Each of these labeled series is shown in a
+      column of the entry: series that were sampled at the same time, like
+      :code:`cpu{host=a}` and :code:`cpu{host=b}`, get a column each, with
+      the series' labels after the :code:`short-name`.  Series that weren't
+      share a column, like those of a process that was restarted with a new
+      ID in its labels.
+    :name-pattern: In place of a :code:`name`, a regular expression for the
+      names of the metrics the entry is for, without their labels, e.g.
+      :code:`\.bytes$`.  The entry is not a column on the line: it gives the
+      metrics it matches its :code:`min`, :code:`max`, :code:`suffix`, and
+      :code:`divisor`, and, if it is :code:`hidden`, keeps them off the line
+      unless they are shown with :ref:`:show-fields<show_fields>`.  Each of
+      these settings for a metric comes from the first entry with a
+      :code:`name` that matches the metric and has the setting, or else the
+      first entry with a pattern that does, so an entry with a :code:`name`
+      can leave out what a pattern already gives.
+    :short-name: What is shown for the metric on the line, if not its name.
+    :min: The lowest value the metric can have, e.g. 0 for a percentage.  The
+      bars for the metric are drawn from this value instead of the lowest
+      value in the file.
+    :max: The highest value the metric can have, e.g. 100 for a percentage.
+      The bars for the metric are drawn to this value instead of the highest
+      value in the file.
+    :suffix: The display suffix for the metric's values, which picks how they
+      are humanized, as for the :code:`suffix` of a value's
+      :code:`unit`, e.g. :code:`B` for bytes or :code:`s` for seconds.  It is
+      used in place of the one for the :code:`value-field`, since that field
+      holds the values of every metric.  The value shown for a counter is
+      the change since the previous time, so a counter of bytes with a
+      suffix of :code:`B` shows the bytes counted in that interval.
+    :divisor: What the metric's values are divided by to be in the unit of
+      the :code:`suffix`, e.g. :code:`1000` for milliseconds with a suffix of
+      :code:`s`, in place of the one for the :code:`value-field`.  The
+      :code:`min` and :code:`max` are in that unit.
+    :hidden: If true, the metric is left off the line until it is shown with
+      :ref:`:show-fields<show_fields>`.  Its :code:`short-name`, :code:`min`,
+      :code:`max`, and unit still apply, so an entry can give the range of a
+      metric that is only looked at in the details panel.
+
+  Metrics can be taken off the line and put on it with
+  :ref:`:hide-fields<hide_fields>` and :ref:`:show-fields<show_fields>`,
+  using the format name and either the :code:`short-name` or the name of the
+  metric, e.g. :code:`:hide-fields my_metrics_log.cpu`.  The
+  :ref:`lnav_format_metrics<table_lnav_format_metrics>` SQL table lists the
+  :code:`display` entries and what is on the line now.
+
+  The details overlay for a line, opened with :kbd:`p`, lists every sample at
+  the line's time, sorted by name with case ignored, with the labeled series
+  of a metric under its name.  Each sample has its value, a bar, and the
+  range of the metric's values in the file, and, for a counter, its total.
+  A :code:`◆` marks the metrics on the line and a :code:`◇` the others.
+  After focusing the overlay with :kbd:`Ctrl` + :kbd:`]`, pressing
+  :kbd:`SPC` on a sample puts its metric on the line or takes it off, and
+  :kbd:`#` opens a :ref:`:spectrogram<spectrogram>` of the metric.
+
+  For example, a log with lines like
+  :code:`{"t": 1763359200000, "m": "cpu.pct", "v": 7.25, "c": "gauge"}` could
+  use the following:
+
+  .. code-block:: json
+
+      {
+          "my_metrics_log": {
+              "file-type": "json",
+              "timestamp-field": "t",
+              "timestamp-divisor": 1000,
+              "metric": {
+                  "name-field": "m",
+                  "value-field": "v",
+                  "kind-field": "c",
+                  "counter-kinds": ["counter"],
+                  "display": [
+                      { "name": "cpu.pct", "short-name": "cpu", "min": 0, "max": 100 },
+                      { "name": "requests", "short-name": "req" },
+                      { "name": "disk.pct", "min": 0, "max": 100, "hidden": true }
+                  ]
+              },
+              "value": {
+                  "m": { "kind": "string", "identifier": true },
+                  "v": { "kind": "float" },
+                  "c": { "kind": "string" }
+              }
+          }
+      }
 
 :tags: This object contains the tags that should automatically be added to
   log messages.

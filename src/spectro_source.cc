@@ -790,7 +790,14 @@ spectrogram_source::text_selection_changed(textview_curses& tc)
     if (!tc.get_selection()) {
         tc.set_selection(0_vl);
     }
-    const auto& s_row = this->load_row(tc, tc.get_selection().value());
+    // No row may be selectable, e.g. when none of them has a value.
+    const auto sel = tc.get_selection();
+    if (!sel) {
+        this->ss_cursor_column = std::nullopt;
+        this->reset_details_source();
+        return;
+    }
+    const auto& s_row = this->load_row(tc, sel.value());
     this->ss_cursor_column
         = s_row.nearest_column(this->ss_cursor_column.value_or(0));
     this->ss_cursor_details_checksum.clear();

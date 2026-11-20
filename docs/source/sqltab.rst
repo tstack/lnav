@@ -11,8 +11,10 @@ the following tables/views:
 * `lnav_events`_
 * `lnav_file`_
 * `lnav_file_metadata`_
+* `lnav_file_metrics`_
 * `lnav_file_value_stats`_
 * `lnav_format_value_stats`_
+* `lnav_format_metrics`_
 * `lnav_format_values`_
 * `lnav_help`_
 * `lnav_log_breakpoints`_
@@ -212,6 +214,64 @@ loaded file.  Currently,
 :content: The metadata itself.
 
 
+lnav_file_metrics
+-----------------
+
+The :code:`lnav_file_metrics` table has a row for each metric in each open
+:ref:`metrics file<metrics_log>`: a CSV whose columns are metrics, or a log
+whose format names the metric of each sample in the data.  It is made from
+what **lnav** kept while indexing the files, so it is quick to query, unlike a
+:code:`GROUP BY` over the `all_metrics`_ table, which reads every sample.  For
+a counter, the statistics are of the changes between samples, which is what
+:code:`all_metrics` shows for it.  The following columns are available in this
+table:
+
+:filepath: The path to the file.
+:format: The name of the file's log format.
+:source: The file's stem, as in :code:`all_metrics`.
+:metric: The name of the metric, as in :code:`all_metrics`.
+:kind: :code:`counter` if the metric's samples are running totals,
+  otherwise :code:`gauge`.
+:count: The number of values: the samples of a gauge, or the changes of a
+  counter.
+:min: The smallest value.
+:max: The largest value.
+:mean: The mean of the values.
+:p50: The estimated median, for a metric that is a column of a CSV, else NULL.
+:p90: The estimated 90th percentile, for a metric that is a column, else NULL.
+:p99: The estimated 99th percentile, for a metric that is a column, else NULL.
+:earliest: The time of the metric's first sample.
+:latest: The time of the metric's last sample.
+:earliest_usecs: (hidden) The :code:`earliest` column, in microseconds from
+  the epoch.
+:latest_usecs: (hidden) The :code:`latest` column, in microseconds from the
+  epoch.
+:unit_suffix: (hidden) The suffix the values are shown with, e.g. :code:`s`
+  or :code:`B`, or NULL if the format gives none.  For a log whose format
+  names the metrics, it is the same as the :code:`unit_suffix` column of
+  `all_metrics`_.  The cells of a CSV carry their own units, so it is NULL
+  for a metric that is a column of a CSV, while `all_metrics`_ has the
+  unit of each cell.
+:unit_divisor: (hidden) What the values are divided by to be in the unit of
+  the suffix, e.g. :code:`1000` for milliseconds shown as seconds, or
+  :code:`1` if they are not divided.  The other numbers in the table are in
+  the units of the values, not of the suffix.
+:range_min: (hidden) The lowest value the format says the metric can have,
+  from the :code:`min` of its display entry or, if that leaves it out, of
+  the first matching entry with a :code:`name_pattern`, or NULL.  The
+  :code:`min` in `lnav_format_metrics`_ is in the unit of the suffix, while
+  this is multiplied by the :code:`unit_divisor` to be in the units of the
+  values, so it can be compared with the other numbers.
+:range_max: (hidden) The highest value the format says the metric can have,
+  found the same way as :code:`range_min`, or NULL.
+
+For example, to list the metrics that were sampled in the last hour:
+
+.. code-block:: custsqlite
+
+   ;SELECT source, metric, kind, min, max FROM lnav_file_metrics
+      WHERE latest >= datetime('now', '-1 hour')
+
 lnav_file_value_stats
 ---------------------
 
@@ -290,13 +350,69 @@ have messages.  The following columns are available in this table:
   property of :code:`opid`: :code:`timestamp`, :code:`start-timestamp`,
   :code:`subsecond`, :code:`time`, :code:`level`, :code:`body`, :code:`opid`,
   :code:`subid`, :code:`thread-id`, :code:`src-file`, :code:`src-line`,
-  :code:`src-location`, or :code:`duration`.  A value can have more than one
+  :code:`src-location`, :code:`duration`, :code:`metric-name`,
+  :code:`metric-value`, or :code:`metric-kind`.  The :code:`metric-*` roles
+  come from the :code:`metric` section of a format whose metrics are named in
+  the data, and are the fields that its samples in `all_metrics`_ are taken
+  from.  A value can have more than one
   role, e.g. :code:`["opid","thread-id"]`, or none, :code:`[]`.  Only the
   values declared in the format's :code:`value` section have rows, so a field
   the format uses without declaring it, such as a :code:`level-field` that is
   not in :code:`value`, does not appear in this table.
 :description: What the value is, from the :code:`description` property of
   the value in the format file, or NULL if it has none.
+
+.. _table_lnav_format_metrics:
+
+lnav_format_metrics
+-------------------
+
+The :code:`lnav_format_metrics` table lists what the loaded log formats whose
+metrics are named in the data say about showing those metrics, whether or not
+a file with that format is open.  There is a row for each entry in the
+:code:`display` list of the format's :code:`metric` section, in order,
+followed by a row for each metric the user showed with
+:ref:`:show-fields<show_fields>` or hid with :ref:`:hide-fields<hide_fields>`
+that the list does not have.  The samples themselves are in the `all_metrics`_
+table.  The following columns are available in this table:
+
+:format: The name of the log format.
+:name: The name of the metric, or NULL for an entry with a
+  :code:`name_pattern`.  It also matches a metric whose name is this
+  followed by labels that start with :code:`[`, :code:`{`, :code:`;`, or
+  :code:`,`.
+:name_pattern: The regular expression for the names of the metrics the entry
+  is for, without their labels, or NULL for an entry with a :code:`name`.
+:short_name: What is shown for the metric on the line, or NULL if it is the
+  name.
+:min: The lowest value the format says the metric can have, e.g. 0 for a
+  percentage, or NULL.
+:max: The highest value the format says the metric can have, e.g. 100 for a
+  percentage, or NULL.
+:unit_suffix: The suffix the metric's values are humanized with, e.g.
+  :code:`B` for bytes, or NULL if the entry does not give one.  A metric
+  that an entry with a :code:`name` leaves it out for gets it from the first
+  matching entry with a :code:`name_pattern` that has it, or else from the
+  format's value field.  The :code:`unit_suffix` column of
+  `all_metrics`_ has the one each sample ends up with.
+:unit_divisor: What the metric's values are divided by to be in the unit of
+  the suffix, or NULL if the entry does not give one, which comes from the
+  other entries the same way.  The :code:`min` and :code:`max` are in that
+  unit, while the values in `all_metrics`_ are not divided.
+:hidden: 1 if the format leaves the metric off the line, 0 if it shows it,
+  or NULL if the format does not list it.
+:shown: 1 if the metric is on the line now, after any
+  :ref:`:hide-fields<hide_fields>` or :ref:`:show-fields<show_fields>`.
+
+For example, to get each sample of a percentage as a fraction of its range:
+
+.. code-block:: custsqlite
+
+   ;SELECT m.log_time, m.metric, (m.value - f.min) / (f.max - f.min) AS frac
+      FROM all_metrics AS m
+      JOIN lnav_format_metrics AS f
+        ON m.metric = f.name OR m.metric GLOB f.name || '[[{;,]*'
+     WHERE f.min IS NOT NULL AND f.max IS NOT NULL
 
 .. _table_lnav_log_breakpoints:
 
@@ -625,11 +741,12 @@ log message parser that is used to automatically extract data, see
 all_metrics
 -----------
 
-The :code:`all_metrics` table is a long-format view over every
-:ref:`metrics_log<metrics_log>` file that **lnav** currently has open.
-Each (file, row, column) combination produces one virtual row, so a
-single query can scan metric values across multiple files without
-having to know which file each metric came from.
+The :code:`all_metrics` table is a long-format view over every metrics file
+that **lnav** currently has open: the :ref:`metric CSVs<metrics_log>` and the
+logs whose format has a :ref:`metric<format_metric>` section.  Each sample is
+one row, whether it is a cell of a CSV or a message of a log, so a single
+query can scan metric values across multiple files without having to know
+which file each metric came from.
 
 The columns are as follows:
 
@@ -640,8 +757,10 @@ The columns are as follows:
 :log_path: The path of the file the sample came from.
 :source: The file stem shown above the sample's column in the
   focused-row overlay.
-:metric: The column name from the source file.
-:value: The parsed numeric value.  Integers pass through as INTEGER;
+:metric: The column name from the source file, or the name of the metric
+  in the message, with any labels.
+:value: The parsed numeric value.  For a counter, this is the running total
+  from the file, see :code:`change`.  Integers pass through as INTEGER;
   floats and unit-suffixed cells (e.g. :code:`20.0KB`) are REAL.
 :raw_value: (hidden) The original cell text from the file.  Collated
   with :code:`measure_with_units`, so :code:`ORDER BY raw_value`
@@ -649,6 +768,28 @@ The columns are as follows:
 :log_mark: (hidden) True when the sample's visible row is
   user-marked.  Marking a metric row fans the mark out to every
   sibling sample at that timestamp.
+:kind: (hidden) :code:`counter` if the metric's samples are running
+  totals, otherwise :code:`gauge`.
+:change: (hidden) For a counter, the change since the previous sample
+  of the metric, or NULL for its first sample.  NULL for a gauge.
+:log_time_usecs: (hidden) The sample's time as the number of microseconds
+  from the epoch, the same as the :code:`log_time_usecs` column of the log
+  tables.
+:unit_suffix: (hidden) The suffix the value is shown with, e.g. :code:`s`
+  or :code:`B`, or NULL if it has none.  It comes from the format, including
+  its metric :code:`display` entries, or from the cell text of a CSV file.
+:unit_divisor: (hidden) What the value is divided by to be in the unit of
+  the suffix, e.g. :code:`1000` for milliseconds shown as seconds, or
+  :code:`1` if it isn't divided.
+
+Constraints on :code:`log_time` (:code:`=`, :code:`<`, :code:`<=`,
+:code:`>`, :code:`>=`, :code:`BETWEEN`) narrow the scan to that time range,
+as long as the time is written the same way as the column, e.g.
+:code:`2026-11-17T06:46:00`.  Constraints on :code:`log_time_usecs` narrow
+it the same way, with any number.  A :code:`metric = ...` or
+:code:`metric IN (...)` constraint skips the lines of other metrics without
+parsing them.  To list the metrics, use the `lnav_file_metrics`_ table, which
+doesn't have to read every sample.
 
 .. code-block:: custsqlite
 

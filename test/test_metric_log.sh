@@ -351,3 +351,174 @@ run_cap_test ${lnav_test} -n \
     -c ":spectrogram queue_depth" \
     ${test_dir}/logfile_metrics.csv \
     ${test_dir}/logfile_metrics2.csv
+
+# A JSON log with one metric sample per line, named in the data.  The line
+# shows the format's display entries in order, with blanks for a metric that
+# has no sample at that time, and a counter's change instead of its total.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_json_metrics.json
+
+# With every display entry hidden, the line shows the metrics that vary,
+# other than the hidden ones.  The format has no line-format, so it gets the
+# default one that shows the sample.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_json_metrics_auto.json
+
+# A numeric field of a format whose metrics are named in the data, which is
+# not one of the metrics and not in the line-format, can still be graphed.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ":spectrogram duration" \
+    ${test_dir}/logfile_json_metrics_duration.json
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_time, metric, value, kind, change FROM all_metrics ORDER BY log_time, metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json_metrics.json
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT format, name, roles FROM lnav_format_values WHERE format LIKE 'test_json_metrics%' ORDER BY format, name" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json_metrics.json
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT * FROM lnav_format_metrics WHERE format LIKE 'test_json_metrics%'" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json_metrics.json
+
+# Hiding an entry, showing a hidden one, and showing a metric the format does
+# not list are reflected in the line and in lnav_format_metrics.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':hide-fields test_json_metrics_log.cpu' \
+    -c ':show-fields test_json_metrics_log.disk.pct' \
+    -c ':show-fields test_json_metrics_log.queue.depth' \
+    ${test_dir}/logfile_json_metrics.json
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':hide-fields test_json_metrics_log.cpu' \
+    -c ':show-fields test_json_metrics_log.disk.pct' \
+    -c ':show-fields test_json_metrics_log.queue.depth' \
+    -c ";SELECT name, short_name, hidden, shown FROM lnav_format_metrics WHERE format = 'test_json_metrics_log'" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json_metrics.json
+
+# Display entries with a name-pattern give the metrics they match a unit and
+# range without being columns, and a hidden one keeps them off the line.  A
+# setting an entry with a name leaves out, like gc.pause_ms's divisor, comes
+# from a pattern.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_metric_units.json
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':show-fields test_metric_units_log.gc.pause_ms' \
+    -c ':show-fields test_metric_units_log.debug.queue' \
+    ${test_dir}/logfile_metric_units.json
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':goto 1' \
+    -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
+    ${test_dir}/logfile_metric_units.json
+
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT name, name_pattern, min, max, unit_suffix, unit_divisor, hidden, shown FROM lnav_format_metrics WHERE format = 'test_metric_units_log'" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metric_units.json
+
+# all_metrics has the unit each sample is shown with, after the patterns
+# fill in what an entry with a name leaves out.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT DISTINCT metric, unit_suffix, unit_divisor FROM all_metrics ORDER BY metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metric_units.json
+
+# lnav_file_metrics has the same unit for each metric, without reading the
+# samples, and the format's range, from the patterns too, not divided.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT metric, unit_suffix, unit_divisor, range_min, range_max FROM lnav_file_metrics ORDER BY metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metric_units.json
+
+# Errors in the metric section of a format.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir}/bad-config-metric \
+    ${test_dir}/logfile_json_metrics.json
+
+# all_metrics narrows its scan by log_time and metric constraints; the rows
+# have to be the same as without them.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT log_time, metric, value, change FROM all_metrics WHERE metric IN ('requests', 'mem.used{host=b}') AND log_time >= '2026-11-17T06:00:10' ORDER BY log_time, metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json_metrics.json
+
+# A time spelled with a space sorts differently as text, so it can't narrow
+# the scan.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_time, source, metric, value FROM all_metrics WHERE metric = 'cpu_pct' AND log_time >= '2026-04-14 10:00:10' AND log_time < '2026-04-14T10:00:20' ORDER BY log_time, source" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metrics.csv \
+    ${test_dir}/logfile_metrics2.csv
+
+# lnav_file_metrics lists each file's metrics from what was kept while
+# indexing: CSV columns, and metrics named in the data, with counters as
+# their changes.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";SELECT source, metric, kind, count, min, max, round(mean, 2) AS mean, p50, earliest, latest, latest_usecs - earliest_usecs AS span_us FROM lnav_file_metrics ORDER BY source, metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_json_metrics.json \
+    ${test_dir}/logfile_metrics.csv \
+    ${test_dir}/logfile_metrics2.csv
+
+# A log_time_usecs range narrows the scan like a log_time one, and gives the
+# same rows.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT a.log_time, a.metric, a.value FROM all_metrics AS a, (SELECT min(log_time_usecs) AS t0 FROM all_metrics) AS f WHERE a.metric = 'cpu_pct' AND a.log_time_usecs >= f.t0 + 10000000 AND a.log_time_usecs < f.t0 + 20000000 ORDER BY a.log_time, a.source" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metrics.csv \
+    ${test_dir}/logfile_metrics2.csv
+
+# A display entry's series share a column when they were never sampled at
+# the same time (cpu.pct after a restart with a new cc label), and get a
+# column each, labeled with their labels, when they were (the two hosts of
+# mem.used, and requests, whose new series starts at the old one's last
+# sample).
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    ${test_dir}/logfile_json_metrics_restart.json
+
+# The overlay lists a row's metrics by name, ignoring case, with the series
+# of a metric under it by their labels, whatever order the file has them in.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ";UPDATE lnav_views SET options = json_object('row-details', 'show') WHERE name = 'log'" \
+    ${test_dir}/logfile_json_metrics_order.json
+
+# With other messages at the top of the LOG view, the nearest row of metrics
+# above them is kept at the top, so the metrics for that time can be seen.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':goto 3' \
+    ${test_dir}/logfile_json_metrics.json \
+    ${test_dir}/logfile_metrics_interleaved.0
+
+# A row of metrics at the top of the view shows them already, so nothing is
+# kept above it.
+run_cap_test ${lnav_test} -n \
+    -I ${test_dir} \
+    -c ':goto 5' \
+    ${test_dir}/logfile_json_metrics.json \
+    ${test_dir}/logfile_metrics_interleaved.0

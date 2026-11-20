@@ -763,7 +763,7 @@ public:
                 ll_iter->set_time(std::chrono::microseconds::zero());
                 ll_iter->set_level(LEVEL_UNKNOWN);
                 ll_iter->set_ignore(true);
-            } else {
+            } else if (std::next(ll_iter) != dst.end()) {
                 auto scan_res = this->parse_line(hdr_sf, dst, sbc);
                 if (!scan_res.is<scan_match>()) {
                     log_warning("first data row did not match");
@@ -771,6 +771,8 @@ public:
                 }
                 ll_iter->set_level(LEVEL_STATS);
             }
+            // The line being scanned is left to scan_int() below, so it is
+            // only counted once in the stats.
         }
         return this->scan_int(dst, li, sbr, sbc);
     }

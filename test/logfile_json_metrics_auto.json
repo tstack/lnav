@@ -1,0 +1,14 @@
+{"ts": "2026-11-17T06:00:00Z", "name": "cpu.pct", "value": 7.25}
+{"ts": "2026-11-17T06:00:00Z", "name": "mem.used{host=a}", "value": 1024}
+{"ts": "2026-11-17T06:00:00Z", "name": "mem.used{host=b}", "value": 2048}
+{"ts": "2026-11-17T06:00:00Z", "name": "disk.pct", "value": 42.5}
+{"ts": "2026-11-17T06:00:00Z", "name": "queue.depth", "value": 3}
+{"ts": "2026-11-17T06:00:10Z", "name": "cpu.pct", "value": 12.5}
+{"ts": "2026-11-17T06:00:10Z", "name": "mem.used{host=a}", "value": 1100}
+{"ts": "2026-11-17T06:00:10Z", "name": "disk.pct", "value": 42.75}
+{"ts": "2026-11-17T06:00:10Z", "name": "queue.depth", "value": 5}
+{"ts": "2026-11-17T06:00:20Z", "name": "cpu.pct", "value": 3.0}
+{"ts": "2026-11-17T06:00:20Z", "name": "mem.used{host=a}", "value": 1100}
+{"ts": "2026-11-17T06:00:20Z", "name": "mem.used{host=b}", "value": 2100}
+{"ts": "2026-11-17T06:00:20Z", "name": "disk.pct", "value": 43}
+{"ts": "2026-11-17T06:00:20Z", "name": "queue.depth", "value": 3}

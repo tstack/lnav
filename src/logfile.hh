@@ -66,6 +66,8 @@
 #include "type_safe/strong_typedef.hpp"
 #include "unique_path.hh"
 
+struct metric_display_def;
+
 /**
  * How far rebuild_index() has gotten with a file.
  *
@@ -988,6 +990,83 @@ public:
 
     const logline_value_stats* stats_for_value(intern_string_t name) const;
 
+    /**
+     * The metrics in this file, when its format is a metric format whose
+     * metrics are not columns (see log_format::metrics_are_columns()).
+     */
+    const metric_table& get_metrics() const { return this->lf_metrics; }
+
+    /**
+     * The stats for a metric of a metric format: its column's stats when
+     * metrics are columns, otherwise the stats in get_metrics().
+     */
+    const logline_value_stats* stats_for_metric(intern_string_t name) const;
+
+    /**
+     * The width of the value column for an entry of a metric format's
+     * display list: the widest value of any metric in the file the entry
+     * matches, so the column stays put from row to row.  Kept until the
+     * file's metrics change, since it is asked for on every rendered row.
+     */
+    size_t metric_display_width(const metric_display_def& mdd) const;
+
+    /**
+     * The most room an entry of a metric format's display list takes on the
+     * line: a cell for each of its columns, or a blank one when there is
+     * none.
+     */
+    size_t metric_display_line_width(const metric_display_def& mdd) const;
+
+    /**
+     * A column of the line for an entry of a metric format's display list,
+     * and the series of the metric (cpu[host:a], cpu[host:b]) whose samples
+     * go in it.
+     */
+    struct metric_display_column {
+        /**
+         * The entry's label, followed by the series' labels when the entry
+         * has more than one column and this one has a single series.
+         */
+        std::string mdc_label;
+        std::vector<intern_string_t> mdc_series;
+    };
+
+    /**
+     * The columns for an entry of a metric format's display list, in the
+     * order their first series was first sampled.  Series that were sampled
+     * over times that overlap get columns of their own, so their samples
+     * can be shown side by side.  Series that weren't share a column, e.g.
+     * the series of a process that was restarted with a new id in its
+     * labels.
+     */
+    const std::vector<metric_display_column>& metric_display_columns(
+        const metric_display_def& mdd) const;
+
+    /** The names of this file's metrics, in the order of their columns or
+     * of when they were first seen. */
+    std::vector<intern_string_t> get_metric_names() const;
+
+    /**
+     * A metric sample from the line at `line_number`, as it is shown: a
+     * counter's sample is replaced by the change since its previous sample,
+     * or nullopt for the first one, which has no change.  The previous
+     * sample is the one at the timestamp before the line's.  A counter with
+     * no sample there starts over, so it shows no change either.
+     */
+    std::optional<logline_value> metric_sample_as_shown(
+        uint64_t line_number, const logline_value& sample);
+
+    /**
+     * Like the above, for a caller that reads every line of the file in
+     * order and so already has `prev_total`, the total of the previous
+     * sample of the same metric, or nullopt when there was none.
+     */
+    std::optional<logline_value> metric_sample_as_shown(
+        const logline_value& sample, std::optional<double> prev_total) const;
+
+    /** The number in a metric sample, or nullopt if it is not a number. */
+    static std::optional<double> metric_sample_number(const logline_value& lv);
+
     log_format_file_state get_format_file_state() const
     {
         return {
@@ -1255,6 +1334,16 @@ private:
     std::vector<logline> lf_index;
     std::vector<uint32_t> lf_time_order;
     size_t lf_time_order_size{0};
+    /**
+     * The totals of the metrics at the timestamp before mpt_time, read once
+     * for all the samples at mpt_time.
+     */
+    struct metric_prev_totals {
+        std::chrono::microseconds mpt_time{0};
+        size_t mpt_generation{0};
+        std::unordered_map<intern_string_t, double, intern_hasher> mpt_totals;
+    };
+    std::optional<metric_prev_totals> lf_metric_prev_totals;
     size_t lf_index_base{0};
     std::chrono::microseconds lf_index_time{0};
     file_off_t lf_index_size{0};
@@ -1290,6 +1379,19 @@ private:
     uint32_t lf_out_of_time_order_count{0};
     safe_notes lf_notes;
     std::vector<logline_value_stats> lf_value_stats;
+    metric_table lf_metrics;
+    struct metric_display_widths {
+        size_t mdw_value;
+        size_t mdw_line;
+        std::vector<metric_display_column> mdw_columns;
+    };
+    /** The widths of display entries by name, for a generation of lf_metrics. */
+    mutable std::pair<size_t,
+                      std::unordered_map<std::string, metric_display_widths>>
+        lf_metric_display_widths;
+
+    const metric_display_widths& widths_for_display(
+        const metric_display_def& mdd) const;
     log_level_stats lf_level_stats;
     pattern_locks lf_pattern_locks;
     /**

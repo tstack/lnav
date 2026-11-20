@@ -68,7 +68,7 @@ status_field::set_value(const string_fragment& value)
 bool
 status_field::set_value(const char* fmt, ...)
 {
-    char buffer[256];
+    char buffer[1024];
     va_list args;
 
     va_start(args, fmt);

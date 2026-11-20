@@ -1,0 +1,14 @@
+2026-11-17T06:00:10.000000  cpu.pct=[7m [0m   12.50%  heap.used.bytes{host=a}=[7m     2.1MB[0m  net.sent.bytes=[7m [0m    3.0KB
+[4m▌ Line 1 parser details.[0m
+ Received Time: [1m2026-11-17T06:00:10.000000+0000[0m — [1min the future[0m  Format: [1m%Y-%m-%dT%H:%M:%S%z[0m  Default Zone: [32mnone[0m
+ [1mPermalink:[0m    #msg000660729b66ae80-v1:e693413f5b5a1d8e55606af592dba348
+ [1mFile:[0m         ]8;;file://{test_dir}/logfile_metric_units.json#L6\[1m{test_dir}/logfile_metric_units.json[0m]8;;\]8;;file://{test_dir}/logfile_metric_units.json#L6\:]8;;\]8;;file://{test_dir}/logfile_metric_units.json#L6\[1m6[0m]8;;\
+[1m Metric samples at this time (5):[0m
+   [1m[32m◆[0m cpu.pct         12.50%  [7m [0m         [32m  3%..12.50%[0m
+   [32m◇[0m debug.queue          2  [7m     [0m     [32m  1..3[0m
+   [32m◇[0m gc.pause_ms      250ms  [7m [0m         [32m  12ms..1s500[0m
+   heap.used.bytes
+     [1m[32m◆[0m {host=a}       2.1MB  [7m          [0m[32m  1.0MB..2.1MB[0m
+   [1m[32m◆[0m net.sent.bytes   3.0KB  [7m [0m         [32m  3.0KB..6.0KB[0m[32m  counter, total 4.0KB[0m
+ [32mNo discovered message fields[0m
+2026-11-17T06:00:20.000000  cpu.pct=[7m [0m       3%  heap.used.bytes{host=a}=[7m     [0m1.6MB  net.sent.bytes=[7m     6.0KB[0m

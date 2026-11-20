@@ -1,0 +1,6 @@
+metric,unit_suffix,unit_divisor
+cpu.pct,%,1
+debug.queue,<NULL>,1
+gc.pause_ms,s,1000
+heap.used.bytes{host=a},B,1
+net.sent.bytes,B,1

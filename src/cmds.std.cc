@@ -2998,8 +2998,10 @@ com_spectrogram(exec_context& ec,
 
     if (ec.ec_dry_run) {
         retval = "";
-    } else if (args.size() == 2) {
-        auto colname = remaining_args(cmdline, args);
+    } else if (args.size() >= 2) {
+        // The rest of the line, so a name with spaces, like a metric named
+        // in a log's data, can be given as is.
+        const auto colname = remaining_args(cmdline, args);
         auto& ss = *lnav_data.ld_spectro_source;
         bool found = false;
 

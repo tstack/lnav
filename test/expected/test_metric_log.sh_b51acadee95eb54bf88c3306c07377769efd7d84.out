@@ -1,0 +1,6 @@
+name,name_pattern,min,max,unit_suffix,unit_divisor,hidden,shown
+gc.pause_ms,<NULL>,<NULL>,<NULL>,s,<NULL>,1,0
+<NULL>,\.pct$,0,100,%,<NULL>,0,0
+<NULL>,\.bytes$,<NULL>,<NULL>,B,<NULL>,0,0
+<NULL>,_ms$,<NULL>,2,ms,1000,0,0
+<NULL>,^debug\.,<NULL>,<NULL>,<NULL>,<NULL>,1,0

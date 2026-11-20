@@ -231,12 +231,12 @@ TEST_CASE("humanize::try_from")
         CHECK(try_res->unit_suffix == "s");
     }
     {
-        // Percentages parse to the ratio (e.g. `42%` → 0.42).
+        // Percentages parse to percentage points (e.g. `42%` → 42).
         auto pct = string_fragment::from_const("42%");
         auto try_res = humanize::try_from<double>(pct);
 
         CHECK(try_res.has_value());
-        CHECK(try_res->value == 0.42);
+        CHECK(try_res->value == 42.0);
         CHECK(try_res->unit_suffix == "%");
     }
     {
@@ -244,7 +244,7 @@ TEST_CASE("humanize::try_from")
         auto try_res = humanize::try_from<double>(pct);
 
         CHECK(try_res.has_value());
-        CHECK(try_res->value == -3.14 / 100.0);
+        CHECK(try_res->value == -3.14);
         CHECK(try_res->unit_suffix == "%");
     }
     {
@@ -252,7 +252,7 @@ TEST_CASE("humanize::try_from")
         auto try_res = humanize::try_from<double>(pct);
 
         CHECK(try_res.has_value());
-        CHECK(try_res->value == 0.015);
+        CHECK(try_res->value == 1.5);
         CHECK(try_res->unit_suffix == "%");
     }
     {
@@ -392,10 +392,16 @@ TEST_CASE("humanize::try_from")
 
 TEST_CASE("humanize::format empty suffix")
 {
-    // No suffix → raw number, 6 sig figs.
+    // No suffix → whole numbers in full, anything else 6 sig figs.
     CHECK(humanize::format(0.0, string_fragment::from_const("")) == "0");
     CHECK(humanize::format(123.0, string_fragment::from_const("")) == "123");
-    CHECK(humanize::format(1.5e6, string_fragment::from_const("")) == "1.5e+06");
+    CHECK(humanize::format(1.5e6, string_fragment::from_const(""))
+          == "1500000");
+    CHECK(humanize::format(-42.0, string_fragment::from_const("")) == "-42");
+    CHECK(humanize::format(1.25, string_fragment::from_const("")) == "1.25");
+    CHECK(humanize::format(1234567.5, string_fragment::from_const(""))
+          == "1.23457e+06");
+    CHECK(humanize::format(1e20, string_fragment::from_const("")) == "1e+20");
 }
 
 TEST_CASE("humanize::format bytes")
@@ -490,4 +496,45 @@ TEST_CASE("humanize::format / try_from roundtrip")
     CHECK(roundtrip_secs(0.5)->value == 0.5);
     CHECK(roundtrip_secs(0.00025)->value == 0.00025);
     CHECK(roundtrip_secs(2.5e-9)->value == 2.5e-9);
+}
+
+TEST_CASE("humanize::format percent")
+{
+    const auto pct = string_fragment::from_const("%");
+
+    CHECK(humanize::format(0.0, pct) == "0%");
+    CHECK(humanize::format(48.0, pct) == "48%");
+    CHECK(humanize::format(100.0, pct) == "100%");
+    CHECK(humanize::format(1500.0, pct) == "1500%");
+    CHECK(humanize::format(-1.0, pct) == "-1%");
+    CHECK(humanize::format(38.681318681318686, pct) == "38.7%");
+    CHECK(humanize::format(99.69024658203125, pct) == "99.7%");
+    CHECK(humanize::format(-3.14, pct) == "-3.1%");
+    CHECK(humanize::format(0.198, pct) == "0.2%");
+    CHECK(humanize::format(0.0312, pct) == "0.031%");
+    CHECK(humanize::format(0.95, pct) == "0.95%");
+    CHECK(humanize::format(-0.25, pct) == "-0.25%");
+    CHECK(humanize::format(0.0000123, pct) == "0.000012%");
+
+    // What try_from gives back comes out the same.
+    auto try_res = humanize::try_from<double>(
+        string_fragment::from_const("42.5%"));
+    CHECK(try_res.has_value());
+    CHECK(humanize::format(try_res->value, try_res->unit_suffix) == "42.5%");
+}
+
+TEST_CASE("humanize::format columnar")
+{
+    const auto col = humanize::alignment::columnar;
+
+    CHECK(humanize::format(3.0, ""_frag, col) == "3");
+    CHECK(humanize::format(12.5, ""_frag, col) == "12.50");
+    CHECK(humanize::format(0.0012, ""_frag, col) == "0.0012");
+    CHECK(humanize::format(1.5e6, ""_frag, col) == "1500000");
+    CHECK(humanize::format(3.0, "%"_frag, col) == "3%");
+    CHECK(humanize::format(12.5, "%"_frag, col) == "12.50%");
+    CHECK(humanize::format(0.198, "%"_frag, col) == "0.20%");
+    CHECK(humanize::format(0.0031, "%"_frag, col) == "0.0031%");
+    CHECK(humanize::format(1200.0, "Hz"_frag, col) == "1.20kHz");
+    CHECK(humanize::format(999.0, "Hz"_frag, col) == "999 Hz");
 }

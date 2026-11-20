@@ -321,6 +321,12 @@ struct string_fragment {
         return false;
     }
 
+    /**
+     * Ordering that ignores case, so names that differ only in case sort
+     * together, with case breaking ties so the order is total.
+     */
+    bool iless(const string_fragment& rhs) const;
+
     bool iequal(const string_fragment& sf) const
     {
         if (this->length() != sf.length()) {

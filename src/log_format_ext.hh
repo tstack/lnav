@@ -199,16 +199,7 @@ public:
 
     bool hide_field(const intern_string_t field_name, bool val) override;
 
-    std::map<intern_string_t, logline_value_meta> get_field_states() override
-    {
-        std::map<intern_string_t, logline_value_meta> retval;
-
-        for (const auto& vd : this->elf_value_defs) {
-            retval.emplace(vd.first, vd.second->vd_meta);
-        }
-
-        return retval;
-    }
+    std::map<intern_string_t, logline_value_meta> get_field_states() override;
 
     std::shared_ptr<log_format> specialized(scan_batch_context& sbc,
                                             int fmt_lock) override;
@@ -430,6 +421,172 @@ public:
 
     std::map<intern_string_t, search_table_def> elf_search_tables;
     std::map<const intern_string_t, highlighter_def> elf_highlighter_patterns;
+
+    /**
+     * For a format whose lines are each one metric sample: the fields that
+     * hold the metric's name and the sample's value.  Both are empty for any
+     * other format.
+     */
+    struct metric_def {
+        intern_string_t md_name_field;
+        intern_string_t md_value_field;
+        /** The field that says what kind of metric a sample is of. */
+        intern_string_t md_kind_field;
+        /**
+         * The values of md_kind_field for a counter, whose samples are
+         * running totals.  Every other sample is of a gauge.
+         */
+        std::vector<std::string> md_counter_kinds;
+        std::vector<metric_display_def> md_display;
+
+        bool is_defined() const
+        {
+            return !this->md_name_field.empty()
+                || !this->md_value_field.empty()
+                || !this->md_kind_field.empty()
+                || !this->md_counter_kinds.empty()
+                || !this->md_display.empty();
+        }
+
+        /** True if the format shows any entry of md_display by default. */
+        bool has_shown_entry() const
+        {
+            for (const auto& mdd : this->md_display) {
+                if (!mdd.mdd_hidden && !mdd.is_pattern()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /** What md_display says about how a metric's values are shown. */
+        struct display_settings {
+            metric_range ds_range;
+            intern_string_t ds_unit_suffix;
+            std::optional<double> ds_unit_divisor;
+        };
+
+        /**
+         * Each setting is from the first entry of md_display with a name
+         * that matches the metric and has it, or else the first entry with
+         * a pattern that does.
+         */
+        display_settings display_settings_for(string_fragment name) const
+        {
+            display_settings retval;
+            auto take = [&retval](const metric_display_def& mdd) {
+                if (!retval.ds_range.mr_min) {
+                    retval.ds_range.mr_min = mdd.mdd_min;
+                }
+                if (!retval.ds_range.mr_max) {
+                    retval.ds_range.mr_max = mdd.mdd_max;
+                }
+                if (retval.ds_unit_suffix.empty()) {
+                    retval.ds_unit_suffix = mdd.mdd_unit_suffix;
+                }
+                if (!retval.ds_unit_divisor) {
+                    retval.ds_unit_divisor = mdd.mdd_unit_divisor;
+                }
+            };
+            for (const auto pattern : {false, true}) {
+                for (const auto& mdd : this->md_display) {
+                    if (mdd.is_pattern() == pattern && mdd.matches(name)) {
+                        take(mdd);
+                    }
+                }
+            }
+            return retval;
+        }
+
+        bool is_counter_kind(string_fragment kind) const
+        {
+            for (const auto& ck : this->md_counter_kinds) {
+                if (kind == ck) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
+
+    metric_def elf_metric;
+
+    /**
+     * What the user changed about the metrics shown on the line, with
+     * :hide-fields and :show-fields.  Shared with the specialized copies.
+     */
+    struct metric_display_state {
+        /** The user's choice for each entry of md_display, if any. */
+        std::vector<std::optional<bool>> mds_entry_hidden;
+        /** Metrics the user asked to see that md_display doesn't have. */
+        std::vector<metric_display_def> mds_extra;
+        /** Metrics the user hid when there is no md_display. */
+        std::vector<metric_display_def> mds_hidden;
+        /**
+         * The entries of md_display that aren't hidden by the format or the
+         * user, then mds_extra.
+         */
+        std::vector<metric_display_def> mds_shown;
+        /** Bumped by update_metric_display(). */
+        size_t mds_generation{0};
+    };
+
+    std::shared_ptr<metric_display_state> elf_metric_display_state{
+        std::make_shared<metric_display_state>()};
+
+    /** Rebuilds mds_shown after a change. */
+    void update_metric_display();
+
+    bool is_metric_hidden(string_fragment name) const override;
+
+    bool is_metric_shown(string_fragment name) const override;
+
+    size_t get_metric_display_generation() const override
+    {
+        return this->elf_metric_display_state->mds_generation;
+    }
+
+    metric_range get_metric_range(string_fragment name) const override;
+
+    /**
+     * Gives the meta of a sample of the named metric the unit that its
+     * md_display entry has, if any.
+     */
+    void apply_metric_unit(logline_value_meta& meta) const;
+
+    void reset_user_field_state() override;
+
+    const std::vector<logline_value>& get_metric_values(
+        const logline_value_vector& values,
+        std::vector<logline_value>& scratch) const override;
+
+    size_t get_metric_value_count() const override;
+
+    bool metrics_are_columns() const override
+    {
+        return !this->elf_metric.is_defined();
+    }
+
+    bool is_metric_sample_field(intern_string_t name) const override
+    {
+        return this->elf_metric.is_defined()
+            && (name == this->elf_metric.md_name_field
+                || name == this->elf_metric.md_value_field
+                || name == this->elf_metric.md_kind_field);
+    }
+
+    std::optional<logline_value_meta> get_metric_meta(
+        intern_string_t name) const override;
+
+    const std::vector<metric_display_def>* get_metric_display() const override
+    {
+        // With nothing to show by default, the line shows the metrics that
+        // vary instead, along with any the user shows (is_metric_shown()).
+        if (!this->elf_metric.has_shown_entry()) {
+            return nullptr;
+        }
+        return &this->elf_metric_display_state->mds_shown;
+    }
 
     scan_result_t scan_json(std::vector<logline>& dst,
                             const line_info& li,

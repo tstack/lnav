@@ -1181,12 +1181,19 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                 } else if (lss != nullptr && sel_opt) {
                     auto win = lss->window_at(sel_opt.value());
                     for (const auto& log_msg : *win) {
-                        for (const auto& lvm : log_msg.get_file_ptr()
-                                                   ->get_format()
-                                                   ->get_value_metadata())
-                        {
+                        const auto* lf = log_msg.get_file_ptr();
+                        const auto format = lf->get_format();
+                        for (const auto& lvm : format->get_value_metadata()) {
                             if (lvm.is_numeric()) {
                                 field_names.emplace(lvm.lvm_name.to_string());
+                            }
+                        }
+                        // Metrics that are not columns are named in the data.
+                        if (format->lf_is_metric
+                            && !format->metrics_are_columns())
+                        {
+                            for (const auto& name : lf->get_metric_names()) {
+                                field_names.emplace(name.to_string());
                             }
                         }
                     }
@@ -1481,8 +1488,8 @@ prompt::get_cmd_parameter_completion(textview_curses& tc,
                         continue;
                     }
                     auto stem = lf->get_unique_path().stem().string();
-                    for (const auto& lvm : format->get_value_metadata()) {
-                        auto name = lvm.lvm_name.to_string();
+                    for (const auto& metric_name : lf->get_metric_names()) {
+                        auto name = metric_name.to_string();
                         // Bare metric name spans every file that ships
                         // it (one day's CSV + another's, for example).
                         poss_strs.emplace(name);

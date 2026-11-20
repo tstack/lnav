@@ -52,6 +52,17 @@ TEST_CASE("string_fragment::lt")
     CHECK_FALSE(sf2 < sf1);
 }
 
+TEST_CASE("string_fragment::iless")
+{
+    CHECK("abc"_frag.iless("ABD"_frag));
+    CHECK_FALSE("ABD"_frag.iless("abc"_frag));
+    CHECK("Cpu"_frag.iless("cpu_user"_frag));
+    CHECK("cpu"_frag.iless("Disk"_frag));
+    CHECK("CPU"_frag.iless("cpu"_frag));
+    CHECK_FALSE("cpu"_frag.iless("CPU"_frag));
+    CHECK_FALSE("cpu"_frag.iless("cpu"_frag));
+}
+
 TEST_CASE("string_fragment::eq")
 {
     auto empty = string_fragment::from_const("");

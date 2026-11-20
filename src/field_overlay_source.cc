@@ -27,6 +27,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string_view>
+
 #include "field_overlay_source.hh"
 
 #include <curl/curl.h>
@@ -37,6 +39,7 @@
 #include "base/humanize.time.hh"
 #include "base/injector.hh"
 #include "base/snippet_highlighters.hh"
+#include "base/string_util.hh"
 #include "command_executor.hh"
 #include "config.h"
 #include "lnav.exec-phase.hh"
@@ -45,6 +48,7 @@
 #include "log_vtab_impl.hh"
 #include "logline_window.hh"
 #include "md2attr_line.hh"
+#include "metric_names.hh"
 #include "msg.text.hh"
 #include "pretty_printer.hh"
 #include "ptimec.hh"
@@ -57,6 +61,227 @@ using namespace md4cpp::literals;
 using namespace lnav::roles::literals;
 
 json_string extract(const char* str);
+
+void
+field_overlay_source::add_metric_samples(vis_line_t row)
+{
+    static constexpr size_t BAR_WIDTH = 10;
+    static constexpr size_t MAX_NAME_WIDTH = 48;
+
+    struct sample_line {
+        logfile* sl_lf;
+        logline_value_meta sl_meta;
+        std::string sl_text;
+        std::optional<double> sl_number;
+        std::optional<double> sl_total;
+    };
+
+    std::vector<sample_line> samples;
+    logline_window::logmsg_info lead_msg{this->fos_lss, row};
+    for (const auto& sib : lead_msg.metric_siblings()) {
+        auto* lf = sib.get_file_ptr();
+        if (lf->get_format_ptr()->metrics_are_columns()) {
+            continue;
+        }
+        for (const auto& lv : sib.get_metric_values()) {
+            sample_line sl{
+                lf,
+                lv.lv_meta,
+                {},
+                std::nullopt,
+                std::nullopt,
+            };
+            const auto raw = lv.lv_meta.lvm_kind == value_kind_t::VALUE_INTEGER
+                ? static_cast<double>(lv.lv_value.i)
+                : lv.lv_value.d;
+            auto shown = lf->metric_sample_as_shown(sib.get_file_line_number(),
+                                                    lv);
+            if (lf->get_metrics().is_counter(lv.lv_meta.lvm_name)) {
+                sl.sl_total = raw;
+                if (shown) {
+                    sl.sl_number = shown->lv_value.d;
+                    sl.sl_text = lv.lv_meta.to_humanized_value(
+                        shown->lv_value.d, humanize::alignment::columnar);
+                } else {
+                    sl.sl_text = "-";
+                }
+            } else {
+                sl.sl_number = raw;
+                sl.sl_text = lv.lv_meta.to_humanized_value(
+                    raw, humanize::alignment::columnar);
+            }
+            samples.emplace_back(std::move(sl));
+        }
+    }
+    if (samples.empty()) {
+        return;
+    }
+
+    // By name, with the series of a metric together under it, ordered by
+    // their labels.
+    std::stable_sort(
+        samples.begin(),
+        samples.end(),
+        [](const sample_line& lhs, const sample_line& rhs) {
+            const auto lname = lhs.sl_meta.lvm_name.to_string_fragment();
+            const auto rname = rhs.sl_meta.lvm_name.to_string_fragment();
+            const auto lbase = lnav::metrics::base_name(lname);
+            const auto rbase = lnav::metrics::base_name(rname);
+            if (lbase.iless(rbase)) {
+                return true;
+            }
+            if (rbase.iless(lbase)) {
+                return false;
+            }
+            return lname.iless(rname);
+        });
+
+    size_t name_width = 0;
+    size_t value_width = 0;
+    for (const auto& sl : samples) {
+        const auto name_sf = sl.sl_meta.lvm_name.to_string_fragment();
+        const auto base = lnav::metrics::base_name(name_sf);
+        // Labels go on their own line, under the group's name.
+        const auto shown_width = base.length() == name_sf.length()
+            ? name_sf.column_width()
+            : 2 + name_sf.substr(base.length()).column_width();
+        name_width
+            = std::max(name_width, std::min(shown_width, MAX_NAME_WIDTH));
+        value_width = std::max(value_width, sl.sl_text.size());
+    }
+
+    this->fos_lines.emplace_back(
+        attr_line_t(" ")
+            .append(fmt::format(FMT_STRING("Metric samples at this time ({}):"),
+                                samples.size()))
+            .with_attr_for_all(VC_ROLE.value(role_t::VCR_H2)));
+
+    std::string last_base;
+    for (const auto& sl : samples) {
+        const auto name_sf = sl.sl_meta.lvm_name.to_string_fragment();
+        const auto base = lnav::metrics::base_name(name_sf);
+        const auto* format = sl.sl_lf->get_format_ptr();
+        const auto* display = format->get_metric_display();
+        auto on_line = false;
+        if (display != nullptr) {
+            for (const auto& mdd : *display) {
+                if (mdd.matches(name_sf)) {
+                    on_line = true;
+                    break;
+                }
+            }
+        } else if (format->is_metric_shown(name_sf)) {
+            on_line = true;
+        } else {
+            // Otherwise the line has the metrics that vary.
+            const auto* line_stats
+                = sl.sl_lf->stats_for_metric(sl.sl_meta.lvm_name);
+            on_line = !format->is_metric_hidden(name_sf)
+                && (format->metrics_are_columns()
+                    || (line_stats != nullptr && line_stats->lvs_count > 0
+                        && line_stats->lvs_min_value
+                            < line_stats->lvs_max_value));
+        }
+
+        attr_line_t al;
+        al.append("   ");
+        if (base.length() != name_sf.length()) {
+            if (base.to_string() != last_base) {
+                attr_line_t group_al;
+                group_al.append("   ").append(lnav::roles::identifier(base));
+                this->fos_lines.emplace_back(group_al);
+            }
+            al.append("  ");
+        }
+        last_base = base.to_string();
+        al.append(on_line ? "\u25c6"_ok : "\u25c7"_comment).append(" ");
+        const auto label_start = al.column_width();
+        // name_width counts a label's indent, so it is measured from where
+        // an unlabeled name starts.
+        const auto name_start = base.length() == name_sf.length()
+            ? label_start
+            : label_start - 2;
+        if (base.length() == name_sf.length()) {
+            auto name_str = name_sf.to_string();
+            truncate_to(name_str, MAX_NAME_WIDTH);
+            al.append(lnav::roles::identifier(name_str));
+        } else {
+            // A label is indented by 2 within the names' column.
+            auto label_str = name_sf.substr(base.length()).to_string();
+            truncate_to(label_str, MAX_NAME_WIDTH - 2);
+            al.append(label_str);
+        }
+        al.pad_to(name_start + name_width + 2);
+        al.append(value_width - sl.sl_text.size(), ' ').append(sl.sl_text);
+        al.append("  ");
+
+        const auto* stats = sl.sl_lf->stats_for_metric(sl.sl_meta.lvm_name);
+        const auto declared = format->get_metric_range(name_sf);
+        const auto bar_start = al.get_string().length();
+        al.append(BAR_WIDTH, ' ');
+        // The bar spans the range the format gives, or else the file's.
+        std::optional<double> lo;
+        std::optional<double> hi;
+        if (stats != nullptr && stats->lvs_count > 0) {
+            lo = stats->lvs_min_value;
+            hi = stats->lvs_max_value;
+        }
+        if (declared.mr_min) {
+            lo = declared.mr_min;
+        }
+        if (declared.mr_max) {
+            hi = declared.mr_max;
+        }
+        if (lo && hi && sl.sl_number) {
+            const auto range = hi.value() - lo.value();
+            size_t bar_amount = BAR_WIDTH;
+            if (range > 0.0) {
+                const auto pct = (sl.sl_number.value() - lo.value()) / range;
+                bar_amount = static_cast<size_t>(
+                    std::clamp<long>(std::lround(pct * BAR_WIDTH),
+                                     1,
+                                     static_cast<long>(BAR_WIDTH)));
+            }
+            if (sl.sl_number.value() != 0.0) {
+                al.with_attr(string_attr(
+                    line_range(bar_start, bar_start + bar_amount),
+                    VC_STYLE.value(text_attrs::with_reverse())));
+            }
+        }
+        if (stats != nullptr && stats->lvs_count > 0) {
+            al.append(
+                attr_line_t(
+                    fmt::format(
+                        FMT_STRING("  {}..{}"),
+                        sl.sl_meta.to_humanized_value(
+                            stats->lvs_min_value,
+                            humanize::alignment::columnar),
+                        sl.sl_meta.to_humanized_value(
+                            stats->lvs_max_value,
+                            humanize::alignment::columnar)))
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT)));
+        }
+        if (sl.sl_total) {
+            al.append(
+                attr_line_t(
+                    fmt::format(FMT_STRING("  counter, total {}"),
+                                sl.sl_meta.to_humanized_value(
+                                    sl.sl_total.value(),
+                                    humanize::alignment::columnar)))
+                    .with_attr_for_all(VC_ROLE.value(role_t::VCR_COMMENT)));
+        }
+
+        // So the keys for a focused field line work on it: space puts the
+        // metric on the line or takes it off, and '#' charts it.
+        auto meta = sl.sl_meta;
+        meta.lvm_hidden = !on_line;
+        meta.lvm_user_hidden = std::nullopt;
+        meta.lvm_format = const_cast<log_format*>(format);
+        this->fos_row_to_field_meta.emplace(this->fos_lines.size(),
+                                            row_info{meta, sl.sl_text});
+        this->fos_lines.emplace_back(al);
+    }
+}
 
 void
 field_overlay_source::build_field_lines(const listview_curses& lv,
@@ -345,6 +570,10 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
                     last_lf->get_filename())));
             stem_line.append(cell);
         };
+        // Only a row made from more than one file needs its sources, and
+        // with runs of the same file merged, that is a row of more than
+        // one run.
+        auto run_count = size_t{0};
         for (const auto& attr : al.al_attrs) {
             if (attr.sa_type != &L_METRIC_SOURCE) {
                 continue;
@@ -352,17 +581,20 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             const auto& cell_lf = attr.sa_value.get<logfile*>();
             const auto col_start = attr.sa_range.lr_start;
             const auto col_end = attr.sa_range.lr_end;
-            if (cell_lf == last_lf && run_end == col_start) {
+            // The cells of a run are separated by blanks, which the run
+            // covers.
+            if (cell_lf == last_lf) {
                 run_end = col_end;
                 continue;
             }
             flush_run();
+            run_count += 1;
             last_lf = cell_lf;
             run_start = col_start;
             run_end = col_end;
         }
         flush_run();
-        if (!stem_line.empty()) {
+        if (run_count > 1 && !stem_line.empty()) {
             this->fos_lines.emplace_back(std::move(stem_line));
         }
     }
@@ -378,8 +610,10 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     // the overlay's "Known message fields" list includes columns that
     // live in other files sharing this timestamp.  `parse_body` only
     // annotates the lead, so without this the overlay shows a subset
-    // of what the composed line renders.
-    if (format->lf_is_metric) {
+    // of what the composed line renders.  When the metrics are not
+    // columns, every sibling has the same columns as the lead, so its
+    // fields would only repeat them.
+    if (format->lf_is_metric && format->metrics_are_columns()) {
         logline_window::logmsg_info lead_msg{this->fos_lss, vis_line_t(row)};
         bool first = true;
         for (const auto& sib : lead_msg.metric_siblings()) {
@@ -448,6 +682,11 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         int this_key_size = meta.lvm_name.size();
 
         if (!meta.lvm_column.is<logline_value_meta::table_column>()) {
+            continue;
+        }
+        if (meta.lvm_format
+            && meta.lvm_format.value()->is_metric_sample_field(meta.lvm_name))
+        {
             continue;
         }
 
@@ -542,18 +781,34 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         }
 
         auto* curr_format = meta.lvm_format.value();
+        // The samples of a metric row are listed below, from every line
+        // in the row, so the fields of this one line are left out here.
+        if (curr_format->is_metric_sample_field(meta.lvm_name)) {
+            continue;
+        }
         auto* curr_elf = dynamic_cast<external_log_format*>(curr_format);
         const auto format_name = curr_format->get_name().to_string();
         attr_line_t al;
         auto value_str = lv.to_humanized_string();
 
         if (curr_format != last_format) {
-            this->fos_lines.emplace_back(" Known message fields for table "
-                                         + format_name + ":");
-            this->fos_lines.back().with_attr(
-                string_attr(line_range(32, 32 + format_name.length()),
-                            VC_STYLE.value(vc.attrs_for_ident(format_name)
-                                           | text_attrs::style::bold)));
+            // A metric row is made of many lines, and these fields are
+            // only from the first of them.
+            auto header = curr_format->lf_is_metric
+                    && !curr_format->metrics_are_columns()
+                ? fmt::format(
+                      FMT_STRING(" Fields of line {:L} for table "),
+                      this->fos_log_helper.ldh_file->get_line_number(
+                          this->fos_log_helper.ldh_line))
+                : std::string(" Known message fields for table ");
+            const auto name_start = static_cast<int>(header.size());
+            header.append(format_name).append(":");
+            this->fos_lines.emplace_back(header);
+            this->fos_lines.back().with_attr(string_attr(
+                line_range(name_start,
+                           name_start + static_cast<int>(format_name.size())),
+                VC_STYLE.value(vc.attrs_for_ident(format_name)
+                               | text_attrs::style::bold)));
             last_format = curr_format;
         }
 
@@ -714,6 +969,10 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             this->fos_lines.emplace_back(al);
             this->add_key_line_attrs(this->fos_known_key_size);
         }
+    }
+
+    if (format->lf_is_metric && !format->metrics_are_columns()) {
+        this->add_metric_samples(vis_line_t(row));
     }
 
     if (!this->fos_log_helper.ldh_extra_json.empty()
@@ -1301,6 +1560,67 @@ field_overlay_source::list_value_for_overlay(
     this->build_meta_line(lv, value_out, row);
 }
 
+std::optional<size_t>
+field_overlay_source::metric_state() const
+{
+    std::optional<size_t> retval;
+    for (const auto& ld : this->fos_lss) {
+        const auto* lf = ld->get_file_ptr();
+        if (lf == nullptr) {
+            continue;
+        }
+        const auto* format = lf->get_format_ptr();
+        if (format == nullptr || !format->lf_is_metric) {
+            continue;
+        }
+        auto key = retval.value_or(0);
+        for (const auto gen : {lf->get_metrics().get_generation(),
+                               format->get_metric_display_generation()})
+        {
+            key ^= gen + 0x9e3779b97f4a7c15ULL + (key << 6) + (key >> 2);
+        }
+        retval = key;
+    }
+
+    return retval;
+}
+
+std::optional<vis_line_t>
+field_overlay_source::metric_row_above(vis_line_t row) const
+{
+    // How far up to look, so a log whose metrics stop early doesn't have
+    // every line above it read on each redraw.
+    static constexpr int MAX_LOOKBACK = 10000;
+
+    if (!this->metric_state()) {
+        return std::nullopt;
+    }
+
+    auto is_metric_row = [this](vis_line_t vl) -> std::optional<bool> {
+        auto file_and_line = this->fos_lss.find_line_with_file(vl);
+        if (!file_and_line) {
+            return std::nullopt;
+        }
+        const auto& [lf, line] = file_and_line.value();
+        const auto* format = lf->get_format_ptr();
+        return !line->is_continued() && format != nullptr
+            && format->lf_is_metric;
+    };
+
+    auto at_row = is_metric_row(row);
+    if (!at_row || at_row.value()) {
+        return std::nullopt;
+    }
+    const auto limit = std::max(0, (int) row - MAX_LOOKBACK);
+    for (auto vl = (int) row - 1; vl >= limit; vl--) {
+        if (is_metric_row(vis_line_t(vl)).value_or(false)) {
+            return vis_line_t(vl);
+        }
+    }
+
+    return std::nullopt;
+}
+
 static void
 apply_status_attrs(std::vector<attr_line_t>& lines)
 {
@@ -1347,6 +1667,33 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                     return true;
                 }
                 sticky_index++;
+            }
+        }
+        if (this->fos_lss.text_line_count() > 0) {
+            auto top = lv.get_top();
+            int sticky_count = 0;
+            for (const auto& sticky_vl : sticky_bv.bv_tree) {
+                if (sticky_vl >= top) {
+                    break;
+                }
+                sticky_count += 1;
+            }
+            // The metric row goes right after the sticky lines, so only
+            // that row has to look for it.
+            if (y != sticky_count) {
+                return false;
+            }
+            auto metric_vl = this->metric_row_above(top);
+            if (metric_vl && sticky_bv.bv_tree.count(metric_vl.value()) > 0)
+            {
+                metric_vl = std::nullopt;
+            }
+            if (metric_vl) {
+                tc.textview_value_for_row(metric_vl.value(), value_out);
+                value_out.with_attr_for_all(VC_ROLE.value(role_t::VCR_STATUS));
+                value_out.with_attr_for_all(
+                    VC_STYLE.value(text_attrs::with_underline()));
+                return true;
             }
         }
         return false;
@@ -1504,6 +1851,7 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                 || this->fos_header_has_time_offset
                     != this->fos_lss.is_time_offset_enabled()
                 || this->fos_header_has_hidden_fields != tc.get_hide_fields()
+                || this->fos_header_metric_state != this->metric_state()
                 || this->fos_header_has_time_preview
                     != (this->fos_lss.ttt_preview_min_time.has_value()
                         || this->fos_lss.ttt_preview_max_time.has_value()))
@@ -1526,14 +1874,30 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                     // Add sticky header lines that are above the viewport
                     const auto& sticky_bv
                         = tc.get_bookmarks()[&textview_curses::BM_STICKY];
+                    // And the metrics for this time, when the top of the
+                    // view is other messages, unless the metric row is
+                    // already shown as a sticky line or as the header.
+                    auto metric_vl = this->metric_row_above(top);
+                    if (metric_vl && metric_vl.value() == header_top) {
+                        metric_vl = std::nullopt;
+                    }
                     for (const auto& sticky_vl : sticky_bv.bv_tree) {
                         if (sticky_vl >= top) {
                             break;
+                        }
+                        if (metric_vl && sticky_vl == metric_vl.value()) {
+                            metric_vl = std::nullopt;
                         }
                         auto al = attr_line_t();
                         tc.textview_value_for_row(sticky_vl, al);
                         this->fos_static_lines.emplace_back(al);
                     }
+                    if (metric_vl) {
+                        auto al = attr_line_t();
+                        tc.textview_value_for_row(metric_vl.value(), al);
+                        this->fos_static_lines.emplace_back(al);
+                    }
+                    const auto has_pinned = !this->fos_static_lines.empty();
 
                     if (header_top < 0_vl) {
                         auto al = attr_line_t();
@@ -1556,9 +1920,7 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                     } else {
                         auto do_apply
                             = (top - header_top) > 1 && line->is_continued();
-                        if (has_sticky && !do_apply
-                            && !this->fos_static_lines.empty())
-                        {
+                        if (has_pinned && !do_apply) {
                             apply_status_attrs(this->fos_static_lines);
                         }
                         auto al = attr_line_t();
@@ -1574,6 +1936,7 @@ field_overlay_source::list_static_overlay(const listview_curses& lv,
                     this->fos_header_has_time_offset
                         = this->fos_lss.is_time_offset_enabled();
                     this->fos_header_has_hidden_fields = tc.get_hide_fields();
+                    this->fos_header_metric_state = this->metric_state();
                     this->fos_header_has_time_preview
                         = (this->fos_lss.ttt_preview_min_time.has_value()
                            || this->fos_lss.ttt_preview_max_time.has_value());

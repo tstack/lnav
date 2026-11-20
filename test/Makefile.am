@@ -274,6 +274,7 @@ dist_noinst_DATA = \
 	bad-config/formats/invalid-sql/init2.sql \
 	bad-config/formats/no-regexes/format.json \
 	bad-config/formats/no-samples/format.json \
+	bad-config-metric/formats/invalid-metric/format.json \
 	bad-config-stack-frame/configs/invalid-stack-frame/config.json \
 	bad-config-stack-frame-lang/configs/invalid-language/config.json \
 	bad-config2/configs/invalid-annotation/config.json \
@@ -433,6 +434,13 @@ dist_noinst_DATA = \
 	logfile_metrics_quoted.csv \
 	logfile_metrics_textonly.csv \
 	logfile_metrics_unordered.csv \
+	logfile_json_metrics.json \
+	logfile_json_metrics_auto.json \
+	logfile_json_metrics_duration.json \
+	logfile_json_metrics_order.json \
+	logfile_metrics_interleaved.0 \
+	logfile_json_metrics_restart.json \
+	logfile_metric_units.json \
 	logfile_not_metrics.csv \
 	logfile_tabular.csv \
 	logfile_tabular_bom.csv \
@@ -547,6 +555,7 @@ dist_noinst_DATA = \
 	formats/dupnames/format.json \
 	formats/jsondeprecated/format.json \
 	formats/jsonidtest/format.json \
+	formats/jsonmetrics/format.json \
 	formats/jsonopiddur/format.json \
 	formats/jsonopidextra/format.json \
 	formats/jsondefault/format.json \

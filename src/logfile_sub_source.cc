@@ -397,92 +397,125 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         this->lss_token_al.al_attrs.emplace_back(
             line_range{0, static_cast<int>(ts_len)}, L_TIMESTAMP.value());
 
-        auto emit_value = [&](logfile* src_lf,
-                              const logline_value& lv,
-                              const char* src_data) {
-            // Respect `:hide-fields metrics_log.<col>` — a user-hidden
-            // column drops out of the composed line entirely.
-            if (lv.lv_meta.is_hidden()) {
-                return;
-            }
-            // Two-space gap between adjacent cells so column names
-            // don't crowd the previous cell's value / colored bar.
-            composed.append("  ");
-            const auto col_start = static_cast<int>(composed.size());
-            composed.append(lv.lv_meta.lvm_name.to_string_fragment().data(),
-                            lv.lv_meta.lvm_name.size());
-            composed.push_back('=');
-            double numeric_value = 0.0;
-            bool have_numeric = false;
+        constexpr size_t MIN_COLUMN_WIDTH = 10;
+
+        // A sample for the line.  The text of its value is read from the
+        // row it came from, which only stays loaded while the sibling walk
+        // below is on it.
+        struct metric_cell {
+            logfile* mc_lf;
+            intern_string_t mc_name;
+            std::string mc_text;
+            std::optional<double> mc_number;
+        };
+
+        // Render the cell using the original file text so humanized
+        // values ("328.78 GB", "20.0KB") stay as the user wrote them
+        // rather than collapsing to the parsed integer.  Fall back to the
+        // numeric formatting if we don't have a valid origin range.
+        auto to_cell = [](logfile* src_lf,
+                          const logline_value& lv,
+                          const char* src_data) {
+            metric_cell retval{src_lf, lv.lv_meta.lvm_name, {}, std::nullopt};
+
             switch (lv.lv_meta.lvm_kind) {
                 case value_kind_t::VALUE_FLOAT:
-                    numeric_value = lv.lv_value.d;
-                    have_numeric = true;
+                    retval.mc_number = lv.lv_value.d;
                     break;
                 case value_kind_t::VALUE_INTEGER:
-                    numeric_value = static_cast<double>(lv.lv_value.i);
-                    have_numeric = true;
+                    retval.mc_number = static_cast<double>(lv.lv_value.i);
                     break;
                 default:
                     break;
             }
-            // Render the cell using the original file text so
-            // humanized values ("328.78 GB", "20.0KB") stay as the
-            // user wrote them rather than collapsing to the parsed
-            // integer.  Fall back to the numeric formatting if we
-            // don't have a valid origin range.
-            std::string rendered;
-            if (src_data != nullptr && lv.lv_origin.is_valid()
-                && lv.lv_origin.length() > 0)
+            if (retval.mc_number
+                && !src_lf->get_format_ptr()->metrics_are_columns())
             {
-                rendered.assign(src_data + lv.lv_origin.lr_start,
-                                lv.lv_origin.length());
+                retval.mc_text = lv.lv_meta.to_humanized_value(
+                    retval.mc_number.value(), humanize::alignment::columnar);
+            } else if (src_data != nullptr && lv.lv_origin.is_valid()
+                       && lv.lv_origin.length() > 0)
+            {
+                retval.mc_text.assign(src_data + lv.lv_origin.lr_start,
+                                      lv.lv_origin.length());
             } else if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_FLOAT) {
-                rendered = fmt::format(FMT_STRING("{}"), lv.lv_value.d);
+                retval.mc_text = fmt::format(FMT_STRING("{}"), lv.lv_value.d);
             } else if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_INTEGER) {
-                rendered = fmt::format(FMT_STRING("{}"), lv.lv_value.i);
+                retval.mc_text = fmt::format(FMT_STRING("{}"), lv.lv_value.i);
             } else {
-                rendered = lv.to_string();
+                retval.mc_text = lv.to_string();
             }
-            constexpr size_t MIN_COLUMN_WIDTH = 10;
-            const auto* stats = src_lf->stats_for_value(lv.lv_meta.lvm_name);
-            const auto col_width = std::max(
-                MIN_COLUMN_WIDTH,
-                stats != nullptr ? static_cast<size_t>(stats->lvs_width)
-                                 : rendered.size());
-            const auto value_start = static_cast<int>(composed.size());
-            if (have_numeric && col_width > rendered.size()) {
-                composed.append(col_width - rendered.size(), ' ');
-            }
-            composed.append(rendered);
-            if (!have_numeric && col_width > rendered.size()) {
-                composed.append(col_width - rendered.size(), ' ');
-            }
+            return retval;
+        };
 
-            if (have_numeric && stats != nullptr && stats->lvs_count > 0
-                && col_width > 0)
-            {
-                const auto range = stats->lvs_max_value - stats->lvs_min_value;
-                int bar_amount;
-                if (numeric_value == 0.0) {
-                    bar_amount = 0;
-                } else if (range <= 0.0) {
-                    bar_amount = static_cast<int>(col_width);
-                } else {
-                    const auto pct
-                        = (numeric_value - stats->lvs_min_value) / range;
-                    bar_amount = static_cast<int>(
-                        std::lround(pct * static_cast<double>(col_width)));
-                    bar_amount = std::clamp(
-                        bar_amount, 1, static_cast<int>(col_width));
+        // Appends "  <label>=<value>" padded to col_width, with a bar for a
+        // number, or blanks in place of the value when there is no cell.
+        // The bar spans the range the format declares, or else the file's.
+        auto emit_cell = [&](logfile* src_lf,
+                             string_fragment label,
+                             const metric_cell* cell,
+                             const logline_value_stats* stats,
+                             size_t col_width,
+                             const metric_range& declared) {
+            // Two-space gap between adjacent cells so column names
+            // don't crowd the previous cell's value / colored bar.
+            composed.append("  ");
+            const auto col_start = static_cast<int>(composed.size());
+            composed.append(label.data(), label.length());
+            this->lss_token_al.al_attrs.emplace_back(
+                line_range{col_start, static_cast<int>(composed.size())},
+                VC_ROLE.value(role_t::VCR_IDENTIFIER));
+            composed.push_back('=');
+            const auto value_start = static_cast<int>(composed.size());
+            if (cell == nullptr) {
+                composed.append(col_width, ' ');
+            } else {
+                const auto& rendered = cell->mc_text;
+                const auto have_numeric = cell->mc_number.has_value();
+                if (have_numeric && col_width > rendered.size()) {
+                    composed.append(col_width - rendered.size(), ' ');
                 }
-                if (bar_amount > 0) {
-                    const auto bar_range = line_range{
-                        value_start,
-                        value_start + bar_amount,
-                    };
-                    this->lss_token_al.al_attrs.emplace_back(
-                        bar_range, VC_STYLE.value(text_attrs::with_reverse()));
+                composed.append(rendered);
+                if (!have_numeric && col_width > rendered.size()) {
+                    composed.append(col_width - rendered.size(), ' ');
+                }
+
+                std::optional<double> lo;
+                std::optional<double> hi;
+                if (stats != nullptr && stats->lvs_count > 0) {
+                    lo = stats->lvs_min_value;
+                    hi = stats->lvs_max_value;
+                }
+                if (declared.mr_min) {
+                    lo = declared.mr_min;
+                }
+                if (declared.mr_max) {
+                    hi = declared.mr_max;
+                }
+                if (have_numeric && lo && hi && col_width > 0) {
+                    const auto numeric_value = cell->mc_number.value();
+                    const auto range = hi.value() - lo.value();
+                    int bar_amount;
+                    if (numeric_value == 0.0) {
+                        bar_amount = 0;
+                    } else if (range <= 0.0) {
+                        bar_amount = static_cast<int>(col_width);
+                    } else {
+                        const auto pct = (numeric_value - lo.value()) / range;
+                        bar_amount = static_cast<int>(
+                            std::lround(pct * static_cast<double>(col_width)));
+                        bar_amount = std::clamp(
+                            bar_amount, 1, static_cast<int>(col_width));
+                    }
+                    if (bar_amount > 0) {
+                        const auto bar_range = line_range{
+                            value_start,
+                            value_start + bar_amount,
+                        };
+                        this->lss_token_al.al_attrs.emplace_back(
+                            bar_range,
+                            VC_STYLE.value(text_attrs::with_reverse()));
+                    }
                 }
             }
             // Tag the column span with its source file so the overlay
@@ -496,12 +529,179 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
         // Fold each row in the fan-out (lead first, then every
         // suppressed metric sibling at this timestamp) into the
         // composed line.
+        std::vector<metric_cell> cells;
+        std::vector<logfile*> cell_files;
         logline_window::logmsg_info lead_msg{*this, vis_line_t(row)};
         for (const auto& sib : lead_msg.metric_siblings()) {
-            const auto& sib_values = sib.get_values();
-            const auto* sib_data = sib_values.lvv_sbr.get_data();
-            for (const auto& lv : sib_values.lvv_values) {
-                emit_value(sib.get_file_ptr(), lv, sib_data);
+            auto* sib_lf = sib.get_file_ptr();
+            const auto* sib_data = sib.get_values().lvv_sbr.get_data();
+            for (const auto& lv : sib.get_metric_values()) {
+                auto shown = sib_lf->metric_sample_as_shown(
+                    sib.get_file_line_number(), lv);
+                // Respect `:hide-fields metrics_log.<col>` — a user-hidden
+                // column drops out of the composed line entirely.
+                if (!shown || shown->lv_meta.is_hidden()) {
+                    continue;
+                }
+                cells.emplace_back(to_cell(sib_lf, shown.value(), sib_data));
+            }
+            if (std::find(cell_files.begin(), cell_files.end(), sib_lf)
+                == cell_files.end())
+            {
+                cell_files.emplace_back(sib_lf);
+            }
+        }
+
+        // With a window, a line without a display list stops at its edge.
+        std::optional<size_t> line_budget;
+        if (tc.get_window() != nullptr) {
+            line_budget = tc.get_dimensions().second;
+        }
+        for (auto* cell_lf : cell_files) {
+            const auto* cell_format = cell_lf->get_format_ptr();
+
+            if (cell_format->metrics_are_columns()) {
+                for (const auto& cell : cells) {
+                    if (cell.mc_lf != cell_lf) {
+                        continue;
+                    }
+                    const auto* stats = cell_lf->stats_for_metric(cell.mc_name);
+                    const auto col_width = std::max(
+                        MIN_COLUMN_WIDTH,
+                        stats != nullptr ? static_cast<size_t>(stats->lvs_width)
+                                         : cell.mc_text.size());
+                    emit_cell(cell_lf,
+                              cell.mc_name.to_string_fragment(),
+                              &cell,
+                              stats,
+                              col_width,
+                              metric_range{});
+                }
+                continue;
+            }
+
+            const auto* display = cell_format->get_metric_display();
+            if (display != nullptr) {
+                // One column per entry, in order, so the columns line up
+                // from row to row, with blanks for a metric this row has
+                // no sample of.
+                // An entry can match several labeled series of a metric
+                // (cpu[host:a], cpu[host:b]): the file says which go in a
+                // column of their own and which share one.
+                for (const auto& mdd : *display) {
+                    const auto col_width = cell_lf->metric_display_width(mdd);
+                    const auto& columns = cell_lf->metric_display_columns(mdd);
+                    for (const auto& column : columns) {
+                        const metric_cell* found = nullptr;
+                        for (const auto& cell : cells) {
+                            if (cell.mc_lf == cell_lf
+                                && std::find(column.mdc_series.begin(),
+                                             column.mdc_series.end(),
+                                             cell.mc_name)
+                                    != column.mdc_series.end())
+                            {
+                                found = &cell;
+                                break;
+                            }
+                        }
+                        emit_cell(cell_lf,
+                                  string_fragment::from_str(column.mdc_label),
+                                  found,
+                                  found != nullptr
+                                      ? cell_lf->stats_for_metric(found->mc_name)
+                                      : nullptr,
+                                  col_width,
+                                  cell_format->get_metric_range(
+                                      string_fragment::from_str(mdd.mdd_name)));
+                    }
+                    if (columns.empty()) {
+                        emit_cell(cell_lf,
+                                  string_fragment::from_str(mdd.get_label()),
+                                  nullptr,
+                                  nullptr,
+                                  col_width,
+                                  metric_range{});
+                    }
+                }
+                continue;
+            }
+
+            // Without a display list, show the metrics the user asked to see
+            // and then those whose values change, each in the order they were
+            // first seen, as many as fit.
+            std::vector<std::pair<std::pair<bool, size_t>, const metric_cell*>>
+                varying;
+            for (const auto& cell : cells) {
+                if (cell.mc_lf != cell_lf) {
+                    continue;
+                }
+                const auto* stats = cell_lf->stats_for_metric(cell.mc_name);
+                if (stats == nullptr || stats->lvs_count == 0) {
+                    continue;
+                }
+                const auto name = cell.mc_name.to_string_fragment();
+                const auto user_shown = cell_format->is_metric_shown(name);
+                if (!user_shown
+                    && (stats->lvs_min_value >= stats->lvs_max_value
+                        || cell_format->is_metric_hidden(name)))
+                {
+                    continue;
+                }
+                varying.emplace_back(
+                    std::make_pair(
+                        !user_shown,
+                        cell_lf->get_metrics().slot_for(cell.mc_name).value_or(
+                            0)),
+                    &cell);
+            }
+            std::stable_sort(
+                varying.begin(),
+                varying.end(),
+                [](const auto& lhs, const auto& rhs) {
+                    return lhs.first < rhs.first;
+                });
+            // A cell that doesn't fit is skipped for a shorter one after it,
+            // since names with labels can be wider than the view.
+            constexpr size_t MORE_WIDTH = 12;  // "  +NNNN more"
+            std::vector<const metric_cell*> skipped;
+            auto emit_varying = [&](const metric_cell* cell) {
+                const auto* stats = cell_lf->stats_for_metric(cell->mc_name);
+                const auto col_width = std::max(
+                    MIN_COLUMN_WIDTH, static_cast<size_t>(stats->lvs_width));
+                emit_cell(cell_lf,
+                          cell->mc_name.to_string_fragment(),
+                          cell,
+                          stats,
+                          col_width,
+                          cell_format->get_metric_range(
+                              cell->mc_name.to_string_fragment()));
+            };
+            for (const auto& [slot, cell] : varying) {
+                const auto* stats = cell_lf->stats_for_metric(cell->mc_name);
+                const auto col_width = std::max(
+                    MIN_COLUMN_WIDTH, static_cast<size_t>(stats->lvs_width));
+                const auto cell_width = 3 + cell->mc_name.size() + col_width;
+                if (line_budget
+                    && composed.size() + cell_width + MORE_WIDTH
+                        > line_budget.value())
+                {
+                    skipped.emplace_back(cell);
+                    continue;
+                }
+                emit_varying(cell);
+            }
+            if (!skipped.empty()) {
+                if (flags & RF_RAW) {
+                    // Search goes through RF_RAW, so the cells that didn't
+                    // fit are put after the ones shown, which keeps the
+                    // shown text a prefix of the searched one.
+                    for (const auto* cell : skipped) {
+                        emit_varying(cell);
+                    }
+                } else {
+                    composed.append(
+                        fmt::format(FMT_STRING("  +{} more"), skipped.size()));
+                }
             }
         }
 
@@ -903,7 +1103,7 @@ logfile_sub_source::text_attrs_for_line(textview_curses& lv,
         auto graph = NCACS_VLINE;
         if (is_first_for_file) {
             if (is_last_for_file) {
-                graph = NCACS_HLINE;
+                graph = NCACS_BULLET;
             } else {
                 graph = NCACS_ULCORNER;
             }
@@ -1797,6 +1997,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 
         this->lss_index.clear();
         this->lss_filtered_index.clear();
+        this->lss_metric_folds.clear();
         this->tss_level_filtered_count = 0;
         this->lss_longest_line = 0;
         this->lss_basename_width = 0;
@@ -1844,6 +2045,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                               filtered_logline_cmp(*this));
         this->lss_filtered_index.resize(
             std::distance(this->lss_filtered_index.begin(), filt_row_iter));
+        this->truncate_metric_folds(this->lss_filtered_index.size());
         search_start = vis_line_t(this->lss_filtered_index.size());
 
         // Drop any before-context entries that reference trimmed indices
@@ -1913,16 +2115,26 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 if (metric_total_width == 0) {
                     metric_total_width = METRIC_TS_WIDTH;
                 }
-                for (const auto& meta :
-                     lf->get_format_ptr()->get_value_metadata())
-                {
-                    const auto* stats = lf->stats_for_value(meta.lvm_name);
+                const auto* display = lf->get_format_ptr()->get_metric_display();
+                if (display != nullptr) {
+                    for (const auto& mdd : *display) {
+                        metric_total_width += lf->metric_display_line_width(mdd);
+                    }
+                    continue;
+                }
+                if (!lf->get_format_ptr()->metrics_are_columns()) {
+                    // Without a display list, the line stops at the
+                    // window's edge, so it needs no room beyond it.
+                    continue;
+                }
+                for (const auto& name : lf->get_metric_names()) {
+                    const auto* stats = lf->stats_for_metric(name);
                     const auto width = std::max(
                         METRIC_MIN_COL_WIDTH,
                         stats != nullptr ? static_cast<size_t>(stats->lvs_width)
                                          : METRIC_MIN_COL_WIDTH);
                     // Layout: "  " + name + '=' + padded value.
-                    metric_total_width += 3 + meta.lvm_name.size() + width;
+                    metric_total_width += 3 + name.size() + width;
                 }
             }
         }
@@ -2142,34 +2354,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         }
                     }
                 }
-                // Metric CSV rows from different files that share a
-                // timestamp get collapsed into a single visible line
-                // so the LOG view (and, eventually, the `metrics`
-                // virtual table) sees one row per timestamp.  The
-                // suppressed siblings stay in `lss_index` so the
-                // renderer can walk forward to gather their values.
-                bool suppress_metric_sibling = false;
-                if (lf->get_format_ptr()->lf_is_metric
-                    && !this->lss_filtered_index.empty())
-                {
-                    const auto prev_cl
-                        = this->lss_index[this->lss_filtered_index.back()]
-                              .value();
-                    uint64_t prev_line_number;
-                    const auto prev_ld
-                        = this->find_data(prev_cl, prev_line_number);
-                    const auto* prev_lf = (*prev_ld)->get_file_ptr();
-                    if (prev_lf->get_format_ptr()->lf_is_metric) {
-                        const auto prev_time
-                            = (prev_lf->begin() + prev_line_number)
-                                  ->get_time<>();
-                        const auto curr_time = line_iter->get_time<>();
-                        if (prev_time == curr_time) {
-                            suppress_metric_sibling = true;
-                        }
-                    }
-                }
-                if (!suppress_metric_sibling) {
+                if (!this->fold_metric_sibling(lf, line_iter)) {
                     this->lss_filtered_index.push_back(index_index);
                 }
                 if (this->lss_index_delegate != nullptr) {
@@ -2742,6 +2927,7 @@ logfile_sub_source::text_filters_changed()
     vis_bm[&textview_curses::BM_USER_EXPR].clear();
 
     this->lss_filtered_index.clear();
+    this->lss_metric_folds.clear();
     this->lss_ctx_before_msgs.clear();
     this->lss_ctx_after_msgs_remaining = 0;
     this->lss_ctx_in_after = false;
@@ -2784,30 +2970,7 @@ logfile_sub_source::text_filters_changed()
                         .insert_once(cl);
                 }
             }
-            // Metric CSV rows from different files that share a
-            // timestamp get collapsed into a single visible line —
-            // same dedup rule as `rebuild_index`, mirrored here so
-            // toggling filters doesn't re-expose the suppressed
-            // siblings as separate visible rows.
-            bool suppress_metric_sibling = false;
-            if (lf->get_format_ptr()->lf_is_metric
-                && !this->lss_filtered_index.empty())
-            {
-                const auto prev_cl
-                    = this->lss_index[this->lss_filtered_index.back()].value();
-                uint64_t prev_line_number;
-                const auto prev_ld = this->find_data(prev_cl, prev_line_number);
-                const auto* prev_lf = (*prev_ld)->get_file_ptr();
-                if (prev_lf->get_format_ptr()->lf_is_metric) {
-                    const auto prev_time
-                        = (prev_lf->begin() + prev_line_number)->get_time<>();
-                    const auto curr_time = line_iter->get_time<>();
-                    if (prev_time == curr_time) {
-                        suppress_metric_sibling = true;
-                    }
-                }
-            }
-            if (!suppress_metric_sibling) {
+            if (!this->fold_metric_sibling(lf, line_iter)) {
                 this->lss_filtered_index.push_back(index_index);
             }
             if (this->lss_index_delegate != nullptr) {
@@ -4790,6 +4953,53 @@ logfile_sub_source::text_size_for_line(textview_curses& tc,
         this->lss_line_size_cache[index].first = row;
     }
     return this->lss_line_size_cache[index].second;
+}
+
+bool
+logfile_sub_source::fold_metric_sibling(const logfile* lf,
+                                        logfile::iterator line_iter)
+{
+    if (!lf->get_format_ptr()->lf_is_metric
+        || this->lss_filtered_index.empty())
+    {
+        return false;
+    }
+
+    const auto prev_cl
+        = this->lss_index[this->lss_filtered_index.back()].value();
+    uint64_t prev_line_number;
+    const auto prev_ld = this->find_data(prev_cl, prev_line_number);
+    const auto* prev_lf = (*prev_ld)->get_file_ptr();
+    if (!prev_lf->get_format_ptr()->lf_is_metric
+        || (prev_lf->begin() + prev_line_number)->get_time<>()
+            != line_iter->get_time<>())
+    {
+        return false;
+    }
+
+    const auto row = static_cast<uint32_t>(this->lss_filtered_index.size() - 1);
+    if (!this->lss_metric_folds.empty()
+        && this->lss_metric_folds.back().mf_row == row)
+    {
+        this->lss_metric_folds.back().mf_total += 1;
+    } else {
+        const auto total = this->lss_metric_folds.empty()
+            ? 0
+            : this->lss_metric_folds.back().mf_total;
+        this->lss_metric_folds.emplace_back(metric_fold{row, total + 1});
+    }
+
+    return true;
+}
+
+void
+logfile_sub_source::truncate_metric_folds(size_t filtered_size)
+{
+    while (!this->lss_metric_folds.empty()
+           && this->lss_metric_folds.back().mf_row >= filtered_size)
+    {
+        this->lss_metric_folds.pop_back();
+    }
 }
 
 int

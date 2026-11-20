@@ -1,0 +1,5 @@
+2026-11-17T06:00:01.000Z INFO worker started
+2026-11-17T06:00:03.000Z INFO request one
+2026-11-17T06:00:05.000Z WARN request two was slow
+2026-11-17T06:00:07.000Z INFO request three
+2026-11-17T06:00:12.000Z INFO request four

@@ -1,0 +1,40 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "invalid_metric_log": {
+        "title": "Invalid metric log",
+        "file-type": "json",
+        "timestamp-field": "ts",
+        "metric": {
+            "name-field": "name",
+            "value-field": "label",
+            "counter-kinds": [
+                "counter"
+            ],
+            "display": [
+                {
+                    "short-name": "nameless"
+                },
+                {
+                    "name": "cpu.pct",
+                    "min": 100,
+                    "max": 0
+                },
+                {
+                    "name": "mem.used",
+                    "name-pattern": "^mem\\."
+                },
+                {
+                    "name-pattern": "("
+                }
+            ]
+        },
+        "value": {
+            "name": {
+                "kind": "string"
+            },
+            "label": {
+                "kind": "string"
+            }
+        }
+    }
+}

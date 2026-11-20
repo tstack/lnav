@@ -376,6 +376,95 @@
                     },
                     "additionalProperties": false
                 },
+                "metric": {
+                    "description": "Indicates that each log message is a sample of a metric, and the fields that hold its name and value",
+                    "title": "/<format_name>/metric",
+                    "type": "object",
+                    "properties": {
+                        "name-field": {
+                            "title": "/<format_name>/metric/name-field",
+                            "description": "The field that holds the name of the metric a line is a sample of",
+                            "type": "string"
+                        },
+                        "value-field": {
+                            "title": "/<format_name>/metric/value-field",
+                            "description": "The numeric field that holds the sample's value",
+                            "type": "string"
+                        },
+                        "kind-field": {
+                            "title": "/<format_name>/metric/kind-field",
+                            "description": "The field that says what kind of metric a sample is of, see counter-kinds",
+                            "type": "string"
+                        },
+                        "counter-kinds": {
+                            "title": "/<format_name>/metric/counter-kinds",
+                            "description": "The values of the kind-field for a counter, whose samples are running totals and are shown as the change since the previous sample.  Samples of any other kind are of a gauge, shown as is.",
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "display": {
+                            "description": "The metrics to show on the line in the LOG view, in order, and how to show them.  Without an entry that is not hidden, lnav shows the metrics whose values change, as many as fit.",
+                            "title": "/<format_name>/metric/display",
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "title": "/<format_name>/metric/display/name",
+                                        "description": "The name of the metric.  It also matches a metric whose name is this followed by labels that start with '[', '{', ';' or ','.",
+                                        "type": "string"
+                                    },
+                                    "name-pattern": {
+                                        "title": "/<format_name>/metric/display/name-pattern",
+                                        "description": "In place of a name, a regular expression for the names of the metrics this entry is for, without their labels.  The entry is not a column on the line: it gives the metrics it matches its min, max, suffix, and divisor, and, if it is hidden, keeps them off the line.  A setting a matching entry with a name leaves out comes from the first matching pattern that has it.",
+                                        "type": "string",
+                                        "examples": [
+                                            "\\.bytes$"
+                                        ]
+                                    },
+                                    "short-name": {
+                                        "title": "/<format_name>/metric/display/short-name",
+                                        "description": "What is shown for the metric, if not its name",
+                                        "type": "string"
+                                    },
+                                    "min": {
+                                        "title": "/<format_name>/metric/display/min",
+                                        "description": "The lowest value the metric can have, e.g. 0 for a percentage, which its bars are drawn from.  Without it, the lowest value in the file is used.",
+                                        "type": "number"
+                                    },
+                                    "max": {
+                                        "title": "/<format_name>/metric/display/max",
+                                        "description": "The highest value the metric can have, e.g. 100 for a percentage, which its bars are drawn to.  Without it, the highest value in the file is used.",
+                                        "type": "number"
+                                    },
+                                    "suffix": {
+                                        "title": "/<format_name>/metric/display/suffix",
+                                        "description": "The display suffix for the metric's values, which picks how they are humanized (e.g. \"B\" for bytes, \"s\" for seconds), in place of the one for the value field.",
+                                        "type": "string",
+                                        "examples": [
+                                            "B"
+                                        ]
+                                    },
+                                    "divisor": {
+                                        "title": "/<format_name>/metric/display/divisor",
+                                        "description": "What the metric's values are divided by to be in the unit of the suffix, in place of the one for the value field, e.g. 1000 for milliseconds with a suffix of \"s\".  The min and max are in that unit.",
+                                        "type": "number",
+                                        "exclusiveMinimum": 0.0
+                                    },
+                                    "hidden": {
+                                        "title": "/<format_name>/metric/display/hidden",
+                                        "description": "Leave the metric off the line unless it is shown with :show-fields.  Its short-name, min, and max still apply.",
+                                        "type": "boolean"
+                                    }
+                                },
+                                "additionalProperties": false
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "ordered-by-time": {
                     "title": "/<format_name>/ordered-by-time",
                     "description": "Indicates that the order of messages in the file is time-based.",

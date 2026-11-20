@@ -29,6 +29,7 @@
  * @file intern_string.cc
  */
 
+#include <algorithm>
 #include <limits>
 #include <mutex>
 #include <new>
@@ -204,6 +205,26 @@ string_fragment::trim(const char* tokens) const
     }
 
     return retval;
+}
+
+bool
+string_fragment::iless(const string_fragment& rhs) const
+{
+    const auto folded_less = [](char l, char r) {
+        return tolower(static_cast<unsigned char>(l))
+            < tolower(static_cast<unsigned char>(r));
+    };
+    if (std::lexicographical_compare(
+            this->begin(), this->end(), rhs.begin(), rhs.end(), folded_less))
+    {
+        return true;
+    }
+    if (std::lexicographical_compare(
+            rhs.begin(), rhs.end(), this->begin(), this->end(), folded_less))
+    {
+        return false;
+    }
+    return *this < rhs;
 }
 
 string_fragment

@@ -1,0 +1,195 @@
+{
+    "$schema": "https://lnav.org/schemas/format-v1.schema.json",
+    "test_json_metrics_log": {
+        "title": "Test JSON metrics log",
+        "description": "A log with one metric sample per line, named in the data",
+        "file-type": "json",
+        "file-pattern": "logfile_json_metrics(_restart|_order)?\\.json",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " ",
+            {
+                "field": "name"
+            },
+            "=",
+            {
+                "field": "value"
+            }
+        ],
+        "timestamp-field": "ts",
+        "metric": {
+            "name-field": "name",
+            "value-field": "value",
+            "kind-field": "type",
+            "counter-kinds": [
+                "counter"
+            ],
+            "display": [
+                {
+                    "name": "cpu.pct",
+                    "short-name": "cpu",
+                    "min": 0,
+                    "max": 100
+                },
+                {
+                    "name": "mem.used",
+                    "short-name": "mem"
+                },
+                {
+                    "name": "requests"
+                },
+                {
+                    "name": "disk.pct",
+                    "min": 0,
+                    "max": 100,
+                    "hidden": true
+                }
+            ]
+        },
+        "value": {
+            "name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "value": {
+                "kind": "float"
+            },
+            "type": {
+                "kind": "string"
+            }
+        }
+    },
+    "test_json_metrics_auto_log": {
+        "title": "Test JSON metrics log without a line",
+        "description": "A log with one metric sample per line, which only declares ranges and has no line-format",
+        "file-type": "json",
+        "file-pattern": "logfile_json_metrics_auto\\.json",
+        "timestamp-field": "ts",
+        "metric": {
+            "name-field": "name",
+            "value-field": "value",
+            "display": [
+                {
+                    "name": "disk.pct",
+                    "min": 0,
+                    "max": 100,
+                    "hidden": true
+                }
+            ]
+        },
+        "value": {
+            "name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "value": {
+                "kind": "float"
+            }
+        }
+    },
+    "test_json_duration_metrics_log": {
+        "title": "Test JSON metrics log with other numeric fields",
+        "description": "A log with one metric sample per line and a numeric field that is not in the line-format",
+        "file-type": "json",
+        "file-pattern": "logfile_json_metrics_duration\\.json",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " ",
+            {
+                "field": "name"
+            },
+            "=",
+            {
+                "field": "value"
+            }
+        ],
+        "timestamp-field": "ts",
+        "metric": {
+            "name-field": "name",
+            "value-field": "value"
+        },
+        "value": {
+            "name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "value": {
+                "kind": "float"
+            },
+            "duration": {
+                "kind": "float"
+            }
+        }
+    },
+    "test_metric_units_log": {
+        "title": "Test JSON metrics log with units",
+        "description": "A log with one metric sample per line, whose units come from name patterns",
+        "file-type": "json",
+        "file-pattern": "logfile_metric_units\\.json",
+        "line-format": [
+            {
+                "field": "__timestamp__"
+            },
+            " ",
+            {
+                "field": "name"
+            },
+            "=",
+            {
+                "field": "value"
+            }
+        ],
+        "timestamp-field": "ts",
+        "metric": {
+            "name-field": "name",
+            "value-field": "value",
+            "kind-field": "type",
+            "counter-kinds": [
+                "counter"
+            ],
+            "display": [
+                {
+                    "name": "gc.pause_ms",
+                    "suffix": "s",
+                    "hidden": true
+                },
+                {
+                    "name-pattern": "\\.pct$",
+                    "min": 0,
+                    "max": 100,
+                    "suffix": "%"
+                },
+                {
+                    "name-pattern": "\\.bytes$",
+                    "suffix": "B"
+                },
+                {
+                    "name-pattern": "_ms$",
+                    "max": 2,
+                    "suffix": "ms",
+                    "divisor": 1000
+                },
+                {
+                    "name-pattern": "^debug\\.",
+                    "hidden": true
+                }
+            ]
+        },
+        "value": {
+            "name": {
+                "kind": "string",
+                "identifier": true
+            },
+            "value": {
+                "kind": "float"
+            },
+            "type": {
+                "kind": "string"
+            }
+        }
+    }
+}

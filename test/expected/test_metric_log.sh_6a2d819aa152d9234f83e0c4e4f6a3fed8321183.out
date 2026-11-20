@@ -1,0 +1,6 @@
+name,short_name,hidden,shown
+cpu.pct,cpu,0,0
+mem.used,mem,0,1
+requests,<NULL>,0,1
+disk.pct,<NULL>,1,1
+queue.depth,<NULL>,<NULL>,1

@@ -2175,23 +2175,31 @@ timeline_source::collect_metric_samples_from_files(metric_state& ms)
         if (!format || !format->lf_is_metric) {
             continue;
         }
-        if (!source.empty() && lf->get_unique_path().stem().string() != source)
-        {
-            continue;
-        }
 
-        // Find the column index for this metric in this file's schema.
-        // Different files can ship different column orders, so the
-        // lookup is per-file.
-        const auto& meta_vec = format->get_value_metadata();
-        size_t col_idx = meta_vec.size();
-        for (size_t i = 0; i < meta_vec.size(); i++) {
-            if (meta_vec[i].lvm_name.to_string() == metric_name) {
-                col_idx = i;
-                break;
+        // Whether this file has the metric, which for a format whose
+        // metrics are columns means having the column.
+        auto has_metric = [&lf, &format](intern_string_t name) {
+            if (format->metrics_are_columns()) {
+                return format->get_metric_meta(name).has_value();
+            }
+            return lf->stats_for_metric(name) != nullptr;
+        };
+        // A metric's own name can have dots in it, so the whole label is
+        // tried as a name before it is split into a source and a name.
+        intern_string_t name = intern_string::lookup(ms.ms_def.md_label);
+        if (!has_metric(name)) {
+            if (source.empty()
+                || lf->get_unique_path().stem().string() != source)
+            {
+                continue;
+            }
+            name = intern_string::lookup(metric_name);
+            if (!has_metric(name)) {
+                continue;
             }
         }
-        if (col_idx >= meta_vec.size()) {
+        const auto meta = format->get_metric_meta(name);
+        if (!meta) {
             continue;
         }
         ms.ms_matched = true;
@@ -2202,9 +2210,9 @@ timeline_source::collect_metric_samples_from_files(metric_state& ms)
         // below also looks at each parsed value's meta and fills in
         // ms_unit_suffix the first time it sees one.
         if (ms.ms_unit_suffix.empty() && ms.ms_unit_divisor == 1.0) {
-            ms.ms_unit_suffix = meta_vec[col_idx].lvm_unit_suffix.to_string();
-            if (meta_vec[col_idx].lvm_unit_divisor != 0.0) {
-                ms.ms_unit_divisor = meta_vec[col_idx].lvm_unit_divisor;
+            ms.ms_unit_suffix = meta->lvm_unit_suffix.to_string();
+            if (meta->lvm_unit_divisor != 0.0) {
+                ms.ms_unit_divisor = meta->lvm_unit_divisor;
             }
         }
         // Pull the column's global min/max from the file's value
@@ -2212,8 +2220,7 @@ timeline_source::collect_metric_samples_from_files(metric_state& ms)
         // scale stays stable as the user scrolls — a sample doesn't
         // change bar height based on what else is in view.  Stats
         // are in base units, same as the samples we store.
-        if (const auto* file_stats
-            = lf->stats_for_value(meta_vec[col_idx].lvm_name);
+        if (const auto* file_stats = lf->stats_for_metric(name);
             file_stats != nullptr && file_stats->lvs_count > 0)
         {
             double lo = file_stats->lvs_min_value;
@@ -2232,6 +2239,10 @@ timeline_source::collect_metric_samples_from_files(metric_state& ms)
 
         string_attrs_t sa;
         logline_value_vector values;
+        std::vector<logline_value> scratch;
+        // Every line is read in order, so the previous sample of the metric
+        // is the one seen last.
+        std::optional<double> prev_total;
         for (auto line_iter = lf->begin(); line_iter != lf->end(); ++line_iter)
         {
             if (line_iter->is_continued() || line_iter->is_ignored()) {
@@ -2246,10 +2257,18 @@ timeline_source::collect_metric_samples_from_files(metric_state& ms)
             values.lvv_sbr = read_res.unwrap();
             auto line_number = std::distance(lf->begin(), line_iter);
             format->annotate(lf, line_number, sa, values);
-            if (col_idx >= values.lvv_values.size()) {
+            const auto& samples = format->get_metric_values(values, scratch);
+            auto lv_iter = std::find_if(
+                samples.begin(), samples.end(), logline_value_name_cmp(&name));
+            if (lv_iter == samples.end()) {
                 continue;
             }
-            const auto& lv = values.lvv_values[col_idx];
+            const auto shown = lf->metric_sample_as_shown(*lv_iter, prev_total);
+            prev_total = logfile::metric_sample_number(*lv_iter);
+            if (!shown) {
+                continue;
+            }
+            const auto& lv = shown.value();
             double v;
             if (lv.lv_meta.lvm_kind == value_kind_t::VALUE_FLOAT) {
                 v = lv.lv_value.d;

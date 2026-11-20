@@ -442,12 +442,13 @@ logline_value_meta::to_humanized_value(int64_t i) const
 }
 
 std::string
-logline_value_meta::to_humanized_value(double d) const
+logline_value_meta::to_humanized_value(double d, humanize::alignment align) const
 {
     if (this->lvm_unit_divisor != 0.0 && this->lvm_unit_divisor != 1.0) {
         d /= this->lvm_unit_divisor;
     }
-    return humanize::format(d, this->lvm_unit_suffix.to_string_fragment());
+    return humanize::format(
+        d, this->lvm_unit_suffix.to_string_fragment(), align);
 }
 
 struct line_range
@@ -1354,6 +1355,10 @@ struct json_log_userdata {
     std::optional<std::chrono::microseconds> jlu_duration;
     std::optional<std::chrono::microseconds> jlu_start_time;
     std::optional<std::chrono::microseconds> jlu_end_time;
+    /** The line's metric name and value, for a format with a metric. */
+    std::optional<std::string> jlu_metric_name;
+    std::optional<double> jlu_metric_value;
+    std::optional<std::string> jlu_metric_kind;
     exttm jlu_exttm;
     size_t jlu_read_order_index{0};
     subline_options jlu_subline_opts;
@@ -1545,6 +1550,9 @@ read_json_number(yajlpp_parse_context* ypc,
                 auto us = std::chrono::microseconds(
                     static_cast<int64_t>(dur_secs * 1000000));
                 jlu->jlu_duration = std::max(us, 1us);
+            }
+            if (jlu->jlu_format->elf_metric.md_value_field == field_name) {
+                jlu->jlu_metric_value = val;
             }
         }
     }
@@ -1886,6 +1894,7 @@ external_log_format::scan_json(std::vector<logline>& dst,
 {
     auto line_frag = sbr.to_string_fragment();
     auto& ll = dst.back();
+    const auto line_index = dst.size() - 1;
 
     if (!line_frag.startswith("{")) {
         if (!this->lf_specialized) {
@@ -1993,6 +2002,40 @@ external_log_format::scan_json(std::vector<logline>& dst,
 
             return scan_no_match{
                 "JSON message does not have expected timestamp property"};
+        }
+
+        if (jlu.jlu_metric_name && jlu.jlu_metric_value
+            && !jlu.jlu_metric_name->empty())
+        {
+            const auto counter = jlu.jlu_metric_kind
+                && this->elf_metric.is_counter_kind(
+                    string_fragment::from_str(jlu.jlu_metric_kind.value()));
+            const intern_string_t metric_name
+                = intern_string::lookup(jlu.jlu_metric_name.value());
+            auto unit_suffix = string_fragment{};
+            auto unit_divisor = 1.0;
+            auto vd_iter
+                = this->elf_value_defs.find(this->elf_metric.md_value_field);
+            if (vd_iter != this->elf_value_defs.end()) {
+                unit_suffix = vd_iter->second->vd_meta.lvm_unit_suffix
+                                  .to_string_fragment();
+                unit_divisor = vd_iter->second->vd_meta.lvm_unit_divisor;
+            }
+            const auto settings = this->elf_metric.display_settings_for(
+                metric_name.to_string_fragment());
+            if (!settings.ds_unit_suffix.empty()) {
+                unit_suffix = settings.ds_unit_suffix.to_string_fragment();
+            }
+            if (settings.ds_unit_divisor) {
+                unit_divisor = settings.ds_unit_divisor.value();
+            }
+            sbc.sbc_metrics.add_sample(metric_name,
+                                       jlu.jlu_metric_value.value(),
+                                       counter,
+                                       line_index,
+                                       ll.get_time<std::chrono::microseconds>(),
+                                       unit_suffix,
+                                       unit_divisor);
         }
 
         if (jlu.jlu_tid_frag) {
@@ -3429,6 +3472,17 @@ read_json_field(yajlpp_parse_context* ypc,
         && jlu->jlu_format->elf_subid_field == field_name)
     {
         jlu->jlu_subid = frag.to_string();
+    }
+    if (!field_name.empty()
+        && jlu->jlu_format->elf_metric.md_name_field == field_name)
+    {
+        // yajl may hand over a decode buffer that a later string reuses.
+        jlu->jlu_metric_name = frag.to_string();
+    }
+    if (!field_name.empty()
+        && jlu->jlu_format->elf_metric.md_kind_field == field_name)
+    {
+        jlu->jlu_metric_kind = frag.to_string();
     }
     if (!field_name.empty()
         && jlu->jlu_format->elf_duration_field == field_name)
@@ -5338,6 +5392,144 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
         vd->vd_meta.lvm_column = logline_value_meta::internal_column{};
     }
 
+    if (this->elf_metric.is_defined()) {
+        auto metric_error = [this, &errors](attr_line_t reason) {
+            errors.emplace_back(
+                lnav::console::user_message::error(
+                    attr_line_t()
+                        .append_quoted(
+                            lnav::roles::symbol(this->elf_name.to_string()))
+                        .append(" is not a valid log format"))
+                    .with_reason(reason)
+                    .with_snippets(this->get_snippets()));
+        };
+        auto check_field = [this, &metric_error](const char* prop,
+                                                 intern_string_t field,
+                                                 bool numeric) {
+            if (field.empty()) {
+                metric_error(attr_line_t()
+                                 .append_quoted(lnav::roles::symbol(
+                                     fmt::format(FMT_STRING("metric/{}"), prop)))
+                                 .append(" must be set"));
+                return;
+            }
+            auto vd_iter = this->elf_value_defs.find(field);
+            if (vd_iter == this->elf_value_defs.end()) {
+                metric_error(attr_line_t()
+                                 .append_quoted(lnav::roles::symbol(
+                                     fmt::format(FMT_STRING("metric/{}"), prop)))
+                                 .append(" refers to ")
+                                 .append_quoted(
+                                     lnav::roles::symbol(field.to_string()))
+                                 .append(", which is not a defined value"));
+                return;
+            }
+            const auto kind = vd_iter->second->vd_meta.lvm_kind;
+            if (numeric && kind != value_kind_t::VALUE_INTEGER
+                && kind != value_kind_t::VALUE_FLOAT)
+            {
+                metric_error(attr_line_t()
+                                 .append_quoted(lnav::roles::symbol(
+                                     fmt::format(FMT_STRING("metric/{}"), prop)))
+                                 .append(" refers to ")
+                                 .append_quoted(
+                                     lnav::roles::symbol(field.to_string()))
+                                 .append(", which must have a kind of ")
+                                 .append_quoted("integer"_symbol)
+                                 .append(" or ")
+                                 .append_quoted("float"_symbol));
+            }
+            if (numeric
+                && (vd_iter->second->vd_meta.lvm_identifier
+                    || vd_iter->second->vd_meta.lvm_foreign_key))
+            {
+                metric_error(attr_line_t()
+                                 .append_quoted(lnav::roles::symbol(
+                                     fmt::format(FMT_STRING("metric/{}"), prop)))
+                                 .append(" refers to ")
+                                 .append_quoted(
+                                     lnav::roles::symbol(field.to_string()))
+                                 .append(", which cannot be an ")
+                                 .append_quoted("identifier"_symbol)
+                                 .append(" or a ")
+                                 .append_quoted("foreign-key"_symbol));
+            }
+        };
+
+        // Only scan_json() records the samples, so a section on a text
+        // format would fold its lines without anything to show.
+        if (this->lf_file_type != file_type_t::JSON) {
+            metric_error(attr_line_t()
+                             .append_quoted("metric"_symbol)
+                             .append(" can only be used in a JSON-lines format"));
+        }
+        check_field("name-field", this->elf_metric.md_name_field, false);
+        check_field("value-field", this->elf_metric.md_value_field, true);
+        if (!this->elf_metric.md_kind_field.empty()) {
+            check_field("kind-field", this->elf_metric.md_kind_field, false);
+        }
+        if (!this->elf_metric.md_counter_kinds.empty()
+            && this->elf_metric.md_kind_field.empty())
+        {
+            metric_error(attr_line_t()
+                             .append_quoted("metric/kind-field"_symbol)
+                             .append(" must be set when ")
+                             .append_quoted("metric/counter-kinds"_symbol)
+                             .append(" is used"));
+        }
+        for (size_t lpc = 0; lpc < this->elf_metric.md_display.size(); lpc++) {
+            const auto& mdd = this->elf_metric.md_display[lpc];
+            if (mdd.mdd_name.empty() == !mdd.is_pattern()) {
+                const auto name_sym = fmt::format(
+                    FMT_STRING("metric/display/{}/name"), lpc);
+                const auto pattern_sym = fmt::format(
+                    FMT_STRING("metric/display/{}/name-pattern"), lpc);
+                metric_error(
+                    attr_line_t(mdd.is_pattern() ? "only one of " : "")
+                        .append_quoted(lnav::roles::symbol(name_sym))
+                        .append(" or ")
+                        .append_quoted(lnav::roles::symbol(pattern_sym))
+                        .append(mdd.is_pattern() ? " can be set"
+                                                 : " must be set"));
+            }
+            if (mdd.mdd_min && mdd.mdd_max && mdd.mdd_min >= mdd.mdd_max) {
+                metric_error(attr_line_t()
+                                 .append_quoted(lnav::roles::symbol(fmt::format(
+                                     FMT_STRING("metric/display/{}/min"), lpc)))
+                                 .append(" must be less than ")
+                                 .append_quoted(lnav::roles::symbol(fmt::format(
+                                     FMT_STRING("metric/display/{}/max"), lpc))));
+            }
+        }
+        this->update_metric_display();
+        this->lf_is_metric = true;
+
+        // The samples are read back from the fields on a message's first
+        // line, and detection scores a JSON format by the line-format
+        // fields a line has, so a format that leaves out the line-format
+        // gets one that shows the sample.
+        if (this->jlf_line_format.empty()
+            && this->elf_value_defs.count(this->elf_metric.md_name_field)
+            && this->elf_value_defs.count(this->elf_metric.md_value_field))
+        {
+            auto add_field = [this](const char* name) {
+                auto& jfe = this->jlf_line_format.emplace_back();
+                jfe.jfe_type = json_log_field::VARIABLE;
+                jfe.jfe_value.pp_value = intern_string::lookup(name);
+            };
+            auto add_constant = [this](const char* text) {
+                auto& jfe = this->jlf_line_format.emplace_back();
+                jfe.jfe_type = json_log_field::CONSTANT;
+                jfe.jfe_default_value = text;
+            };
+            add_field("__timestamp__");
+            add_constant(" ");
+            add_field(this->elf_metric.md_name_field.get());
+            add_constant("=");
+            add_field(this->elf_metric.md_value_field.get());
+        }
+    }
+
     for (auto& od_pair : *this->lf_opid_description_def) {
         od_pair.second.od_name = od_pair.first;
         od_pair.second.od_index
@@ -6828,7 +7020,7 @@ logline_value_stats::merge(const logline_value_stats& other)
 }
 
 void
-logline_value_stats::add_value(double value)
+logline_value_stats::add_value(double value, with_digest wd)
 {
     if (value < this->lvs_min_value) {
         this->lvs_min_value = value;
@@ -6838,10 +7030,212 @@ logline_value_stats::add_value(double value)
     }
     this->lvs_count += 1;
     this->lvs_total += value;
+    if (wd == with_digest::no) {
+        return;
+    }
     if (!this->lvs_tdigest) {
         this->lvs_tdigest.emplace(TDIGEST_SIZE);
     }
     this->lvs_tdigest->insert(value);
+}
+
+size_t
+metric_table::insert_slot(intern_string_t name)
+{
+    auto [iter, inserted] = this->mt_slots.emplace(name, this->mt_names.size());
+    if (inserted) {
+        this->mt_names.emplace_back(name);
+        auto& si = this->mt_slot_info.emplace_back();
+        if (this->mt_prior != nullptr) {
+            auto prior_slot = this->mt_prior->slot_for(name);
+            if (prior_slot) {
+                si.si_last
+                    = this->mt_prior->mt_slot_info[prior_slot.value()].si_last;
+            }
+        }
+    }
+
+    return iter->second;
+}
+
+std::optional<double>
+metric_table::add_sample(intern_string_t name,
+                         double value,
+                         bool counter,
+                         size_t line_index,
+                         std::chrono::microseconds time,
+                         string_fragment unit_suffix,
+                         double unit_divisor)
+{
+    const auto shown_width = [unit_suffix, unit_divisor](double v) {
+        if (unit_divisor != 0.0 && unit_divisor != 1.0) {
+            v /= unit_divisor;
+        }
+        return (int64_t) humanize::format(
+                   v, unit_suffix, humanize::alignment::columnar)
+            .size();
+    };
+
+    this->mt_generation += 1;
+    const auto slot_count = this->mt_names.size();
+    const auto slot = this->insert_slot(name);
+    auto& si = this->mt_slot_info[slot];
+    this->mt_last_sample = last_sample{
+        line_index,
+        slot,
+        this->mt_names.size() > slot_count,
+        si,
+    };
+    const auto prev = std::exchange(si.si_last, value);
+    if (si.si_times) {
+        si.si_times->tr_first = std::min(si.si_times->tr_first, time);
+        si.si_times->tr_last = std::max(si.si_times->tr_last, time);
+    } else {
+        si.si_times = time_range{time, time};
+    }
+
+    si.si_counter = si.si_counter || counter;
+    if (!counter) {
+        si.si_stats.add_value(value, logline_value_stats::with_digest::no);
+        const auto width = shown_width(value);
+        if (width > si.si_stats.lvs_width) {
+            si.si_stats.lvs_width = width;
+        }
+        return std::nullopt;
+    }
+    if (!prev) {
+        return std::nullopt;
+    }
+
+    // A total that went down was reset, e.g. by a restart, so the new value
+    // is all that was counted since.
+    const auto change = value < prev.value() ? value : value - prev.value();
+    si.si_stats.add_value(change, logline_value_stats::with_digest::no);
+    const auto change_width = shown_width(change);
+    if (change_width > si.si_stats.lvs_width) {
+        si.si_stats.lvs_width = change_width;
+    }
+    return change;
+}
+
+void
+metric_table::merge(const metric_table& other)
+{
+    this->mt_generation += 1;
+    for (size_t lpc = 0; lpc < other.mt_names.size(); lpc++) {
+        const auto& other_si = other.mt_slot_info[lpc];
+        auto& si = this->mt_slot_info[this->insert_slot(other.mt_names[lpc])];
+
+        si.si_stats.merge(other_si.si_stats);
+        si.si_counter = si.si_counter || other_si.si_counter;
+        if (other_si.si_last) {
+            si.si_last = other_si.si_last;
+        }
+        if (other_si.si_times) {
+            if (si.si_times) {
+                si.si_times->tr_first = std::min(
+                    si.si_times->tr_first, other_si.si_times->tr_first);
+                si.si_times->tr_last = std::max(si.si_times->tr_last,
+                                                other_si.si_times->tr_last);
+            } else {
+                si.si_times = other_si.si_times;
+            }
+        }
+    }
+}
+
+void
+metric_table::clear()
+{
+    this->mt_generation += 1;
+    this->mt_names.clear();
+    this->mt_slot_info.clear();
+    this->mt_slots.clear();
+    this->mt_last_sample.reset();
+}
+
+void
+metric_table::drop_samples_from(size_t line_count)
+{
+    if (!this->mt_last_sample || this->mt_last_sample->ls_line < line_count) {
+        return;
+    }
+
+    auto& ls = this->mt_last_sample.value();
+    this->mt_generation += 1;
+    if (ls.ls_new_slot && ls.ls_slot + 1 == this->mt_names.size()) {
+        this->mt_slots.erase(this->mt_names.back());
+        this->mt_names.pop_back();
+        this->mt_slot_info.pop_back();
+    } else {
+        this->mt_slot_info[ls.ls_slot] = std::move(ls.ls_before);
+    }
+    this->mt_last_sample.reset();
+}
+
+void
+metric_table::retime_sample(size_t line_index, std::chrono::microseconds time)
+{
+    if (!this->mt_last_sample || this->mt_last_sample->ls_line != line_index) {
+        return;
+    }
+
+    const auto& ls = this->mt_last_sample.value();
+    auto& times = this->mt_slot_info[ls.ls_slot].si_times;
+    times = ls.ls_before.si_times;
+    if (times) {
+        times->tr_first = std::min(times->tr_first, time);
+        times->tr_last = std::max(times->tr_last, time);
+    } else {
+        times = time_range{time, time};
+    }
+}
+
+void
+metric_table::discard_front_lines()
+{
+    this->mt_generation += 1;
+}
+
+std::optional<size_t>
+metric_table::slot_for(intern_string_t name) const
+{
+    auto iter = this->mt_slots.find(name);
+    if (iter == this->mt_slots.end()) {
+        return std::nullopt;
+    }
+
+    return iter->second;
+}
+
+const logline_value_stats*
+metric_table::stats_for(intern_string_t name) const
+{
+    auto slot = this->slot_for(name);
+    if (!slot) {
+        return nullptr;
+    }
+
+    return &this->mt_slot_info[slot.value()].si_stats;
+}
+
+bool
+metric_table::is_counter(intern_string_t name) const
+{
+    auto slot = this->slot_for(name);
+
+    return slot && this->mt_slot_info[slot.value()].si_counter;
+}
+
+std::optional<metric_table::time_range>
+metric_table::time_range_for(intern_string_t name) const
+{
+    auto slot = this->slot_for(name);
+    if (!slot) {
+        return std::nullopt;
+    }
+
+    return this->mt_slot_info[slot.value()].si_times;
 }
 
 void
@@ -6907,10 +7301,286 @@ external_log_format::get_pattern_regex(const pattern_locks& pl,
     return this->elf_pattern_order[pat_index]->p_pcre.pp_value->get_pattern();
 }
 
+const std::vector<logline_value>&
+external_log_format::get_metric_values(
+    const logline_value_vector& values,
+    std::vector<logline_value>& scratch) const
+{
+    if (!this->elf_metric.is_defined()) {
+        return values.lvv_values;
+    }
+
+    scratch.clear();
+    const logline_value* name_lv = nullptr;
+    const logline_value* value_lv = nullptr;
+    for (const auto& lv : values.lvv_values) {
+        if (lv.lv_meta.lvm_name == this->elf_metric.md_name_field) {
+            name_lv = &lv;
+        } else if (lv.lv_meta.lvm_name == this->elf_metric.md_value_field) {
+            value_lv = &lv;
+        }
+    }
+    // A line without both, or whose value is not a number, is not a sample.
+    if (name_lv == nullptr || value_lv == nullptr) {
+        return scratch;
+    }
+    const auto kind = value_lv->lv_meta.lvm_kind;
+    if (kind != value_kind_t::VALUE_INTEGER && kind != value_kind_t::VALUE_FLOAT)
+    {
+        return scratch;
+    }
+    const auto name_sf = name_lv->text_value_fragment();
+    if (name_sf.empty()) {
+        return scratch;
+    }
+
+    auto& sample = scratch.emplace_back(*value_lv);
+    sample.lv_meta.lvm_name = intern_string::lookup(name_sf);
+    this->apply_metric_unit(sample.lv_meta);
+
+    return scratch;
+}
+
+std::optional<logline_value_meta>
+external_log_format::get_metric_meta(intern_string_t name) const
+{
+    if (!this->elf_metric.is_defined()) {
+        return log_format::get_metric_meta(name);
+    }
+
+    auto vd_iter = this->elf_value_defs.find(this->elf_metric.md_value_field);
+    if (vd_iter == this->elf_value_defs.end()) {
+        return std::nullopt;
+    }
+    auto retval = vd_iter->second->vd_meta;
+    retval.lvm_name = name;
+    this->apply_metric_unit(retval);
+
+    return retval;
+}
+
+void
+external_log_format::apply_metric_unit(logline_value_meta& meta) const
+{
+    const auto settings = this->elf_metric.display_settings_for(
+        meta.lvm_name.to_string_fragment());
+    if (!settings.ds_unit_suffix.empty()) {
+        meta.lvm_unit_suffix = settings.ds_unit_suffix;
+    }
+    if (settings.ds_unit_divisor) {
+        meta.lvm_unit_divisor = settings.ds_unit_divisor.value();
+    }
+}
+
+size_t
+external_log_format::get_metric_value_count() const
+{
+    if (this->elf_metric.is_defined()) {
+        return 1;
+    }
+
+    return log_format::get_metric_value_count();
+}
+
+void
+external_log_format::update_metric_display()
+{
+    auto& mds = *this->elf_metric_display_state;
+    const auto& config = this->elf_metric.md_display;
+
+    mds.mds_entry_hidden.resize(config.size());
+    mds.mds_shown.clear();
+    for (size_t lpc = 0; lpc < config.size(); lpc++) {
+        if (!config[lpc].is_pattern()
+            && !mds.mds_entry_hidden[lpc].value_or(config[lpc].mdd_hidden))
+        {
+            mds.mds_shown.emplace_back(config[lpc]);
+        }
+    }
+    mds.mds_shown.insert(
+        mds.mds_shown.end(), mds.mds_extra.begin(), mds.mds_extra.end());
+    mds.mds_generation += 1;
+}
+
+bool
+external_log_format::is_metric_hidden(string_fragment name) const
+{
+    const auto& mds = *this->elf_metric_display_state;
+    const auto& config = this->elf_metric.md_display;
+    for (size_t lpc = 0; lpc < config.size(); lpc++) {
+        if (!config[lpc].is_pattern() && config[lpc].matches(name)) {
+            return lpc < mds.mds_entry_hidden.size()
+                ? mds.mds_entry_hidden[lpc].value_or(config[lpc].mdd_hidden)
+                : config[lpc].mdd_hidden;
+        }
+    }
+    for (const auto& mdd : mds.mds_hidden) {
+        if (mdd.matches(name)) {
+            return true;
+        }
+    }
+    // A pattern only hides, so the user's choice for a metric comes first.
+    for (const auto& mdd : config) {
+        if (mdd.is_pattern() && mdd.mdd_hidden && mdd.matches(name)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool
+external_log_format::is_metric_shown(string_fragment name) const
+{
+    for (const auto& mdd : this->elf_metric_display_state->mds_shown) {
+        if (mdd.matches(name)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+metric_range
+external_log_format::get_metric_range(string_fragment name) const
+{
+    const auto settings = this->elf_metric.display_settings_for(name);
+
+    // The bounds are in the unit the values are shown in, and the values
+    // they are compared with are not.
+    auto divisor = 1.0;
+    if (settings.ds_unit_divisor) {
+        divisor = settings.ds_unit_divisor.value();
+    } else {
+        auto vd_iter
+            = this->elf_value_defs.find(this->elf_metric.md_value_field);
+        if (vd_iter != this->elf_value_defs.end()
+            && vd_iter->second->vd_meta.lvm_unit_divisor != 0.0)
+        {
+            divisor = vd_iter->second->vd_meta.lvm_unit_divisor;
+        }
+    }
+    metric_range retval;
+    if (settings.ds_range.mr_min) {
+        retval.mr_min = settings.ds_range.mr_min.value() * divisor;
+    }
+    if (settings.ds_range.mr_max) {
+        retval.mr_max = settings.ds_range.mr_max.value() * divisor;
+    }
+    return retval;
+}
+
+std::map<intern_string_t, logline_value_meta>
+external_log_format::get_field_states()
+{
+    std::map<intern_string_t, logline_value_meta> retval;
+
+    for (const auto& vd : this->elf_value_defs) {
+        retval.emplace(vd.first, vd.second->vd_meta);
+    }
+
+    // The metrics on the line, as fields, so the session saves what the user
+    // changed about them the way it does for other fields.
+    const auto& mds = *this->elf_metric_display_state;
+    auto add_metric = [this, &retval](const std::string& name,
+                                      bool hidden,
+                                      std::optional<bool> user_hidden) {
+        const auto key = intern_string::lookup(name);
+        if (retval.count(key) > 0) {
+            return;
+        }
+        auto meta = logline_value_meta(key,
+                                       value_kind_t::VALUE_FLOAT,
+                                       logline_value_meta::internal_column{},
+                                       this);
+        meta.lvm_hidden = hidden;
+        meta.lvm_user_hidden = user_hidden;
+        retval.emplace(key, meta);
+    };
+    const auto& config = this->elf_metric.md_display;
+    for (size_t lpc = 0; lpc < config.size(); lpc++) {
+        if (config[lpc].is_pattern()) {
+            continue;
+        }
+        add_metric(config[lpc].get_label(),
+                   config[lpc].mdd_hidden,
+                   lpc < mds.mds_entry_hidden.size()
+                       ? mds.mds_entry_hidden[lpc]
+                       : std::nullopt);
+    }
+    for (const auto& mdd : mds.mds_extra) {
+        add_metric(mdd.mdd_name, true, false);
+    }
+    for (const auto& mdd : mds.mds_hidden) {
+        add_metric(mdd.mdd_name, false, true);
+    }
+
+    return retval;
+}
+
+void
+external_log_format::reset_user_field_state()
+{
+    for (const auto& vd : this->elf_value_defs) {
+        this->hide_field(vd.first, false);
+    }
+
+    auto& mds = *this->elf_metric_display_state;
+    mds.mds_entry_hidden.clear();
+    mds.mds_extra.clear();
+    mds.mds_hidden.clear();
+    this->update_metric_display();
+}
+
 bool
 external_log_format::hide_field(const intern_string_t field_name, bool val)
 {
     const auto vd_iter = this->elf_value_defs.find(field_name);
+    if (vd_iter == this->elf_value_defs.end() && this->elf_metric.is_defined())
+    {
+        // For a format whose metrics are named in the data, the name is that
+        // of a metric on the line.
+        auto& mds = *this->elf_metric_display_state;
+        const auto name = field_name.to_string();
+        auto found = false;
+
+        const auto& config = this->elf_metric.md_display;
+        mds.mds_entry_hidden.resize(config.size());
+        // The name can be an entry's label, or the name of a metric it
+        // matches, which is what the overlay passes.
+        const auto name_sf = string_fragment::from_str(name);
+        auto same = [&name, &name_sf](const metric_display_def& mdd) {
+            return mdd.mdd_name == name || mdd.matches(name_sf);
+        };
+        // A pattern isn't a column, so the user's choice for one of the
+        // metrics it matches is kept for that metric alone.
+        for (size_t lpc = 0; lpc < config.size(); lpc++) {
+            if (config[lpc].is_pattern()) {
+                continue;
+            }
+            if (config[lpc].get_label() == name || same(config[lpc])) {
+                mds.mds_entry_hidden[lpc] = val;
+                found = true;
+            }
+        }
+        if (!found) {
+            auto extra_iter
+                = std::find_if(mds.mds_extra.begin(), mds.mds_extra.end(), same);
+            auto hidden_iter = std::find_if(
+                mds.mds_hidden.begin(), mds.mds_hidden.end(), same);
+            if (val) {
+                if (extra_iter != mds.mds_extra.end()) {
+                    mds.mds_extra.erase(extra_iter);
+                } else if (hidden_iter == mds.mds_hidden.end()) {
+                    mds.mds_hidden.emplace_back(metric_display_def{name, {}});
+                }
+            } else if (hidden_iter != mds.mds_hidden.end()) {
+                mds.mds_hidden.erase(hidden_iter);
+            } else if (extra_iter == mds.mds_extra.end()) {
+                mds.mds_extra.emplace_back(metric_display_def{name, {}});
+            }
+        }
+        this->update_metric_display();
+        return true;
+    }
     if (vd_iter == this->elf_value_defs.end()) {
         log_warning("field to hide not found: %s.%s",
                     this->elf_name.c_str(),

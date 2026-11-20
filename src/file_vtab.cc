@@ -49,6 +49,7 @@
 #include "log_format_loader.hh"
 #include "logfile.hh"
 #include "session_data.hh"
+#include "sql_util.hh"
 #include "text_format.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
@@ -718,7 +719,7 @@ CREATE TABLE lnav_db.lnav_format_values (
     unit_suffix text,    -- The suffix used when humanizing the value, e.g. 's' or 'B'.
     unit_divisor real,   -- What the raw value is divided by to get the base unit implied by the suffix.
     identifier integer,  -- 1 when the value names something, like an ID, so grouping by it makes sense.
-    roles text,          -- A JSON array of what the format uses the value for, e.g. ["opid"]: timestamp, start-timestamp, subsecond, time, level, body, opid, subid, thread-id, src-file, src-line, src-location, or duration.  The opid and thread-id ones are also all_logs.log_opid and log_thread_id.
+    roles text,          -- A JSON array of what the format uses the value for, e.g. ["opid"]: timestamp, start-timestamp, subsecond, time, level, body, opid, subid, thread-id, src-file, src-line, src-location, duration, metric-name, metric-value, or metric-kind.  The opid and thread-id ones are also all_logs.log_opid and log_thread_id.  The metric ones are the fields that a format whose metrics are named in the data takes the samples in all_metrics from.
     description text     -- What the value is, as the format describes it, or NULL.
 );
 )";
@@ -769,6 +770,10 @@ CREATE TABLE lnav_db.lnav_format_values (
                                 {"src-line", ext->elf_src_line_field},
                                 {"src-location", ext->elf_src_loc_field},
                                 {"duration", ext->elf_duration_field},
+                                {"metric-name", ext->elf_metric.md_name_field},
+                                {"metric-value",
+                                 ext->elf_metric.md_value_field},
+                                {"metric-kind", ext->elf_metric.md_kind_field},
                             };
                         for (const auto& [role, field] : ext_roles) {
                             if (!field.empty() && field == name) {
@@ -857,6 +862,176 @@ CREATE TABLE lnav_db.lnav_format_values (
                 } else {
                     to_sqlite(ctx, *vr.vr_description);
                 }
+                break;
+            default:
+                ensure(0);
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+};
+
+struct lnav_format_metrics {
+    static constexpr const char* NAME = "lnav_format_metrics";
+    static constexpr const char* CREATE_STMT = R"(
+-- The metrics that the loaded log formats whose metrics are named in the data
+-- say how to show, from the "display" list of the format's "metric" section,
+-- in order, followed by the metrics the user showed or hid that the list does
+-- not have.  The samples themselves are in all_metrics.
+-- Tags: metadata
+CREATE TABLE lnav_db.lnav_format_metrics (
+    format text,       -- The name of the log format.
+    name text,         -- The name of the metric, or NULL for an entry with a name_pattern.  It also matches a metric whose name is this followed by labels that start with '[', '{', ';' or ','.
+    name_pattern text, -- The regular expression for the names of the metrics the entry is for, without their labels, or NULL for an entry with a name.
+    short_name text,   -- What is shown for the metric on the line, or NULL if it is the name.
+    min real,          -- The lowest value the format says the metric can have, or NULL.
+    max real,          -- The highest value the format says the metric can have, or NULL.
+    unit_suffix text,  -- The suffix the metric's values are humanized with, or NULL if the entry does not give one.
+    unit_divisor real, -- What the metric's values are divided by to be in the unit of the suffix, or NULL if the entry does not give one.
+    hidden integer,    -- 1 if the format leaves the metric off the line, NULL if the format does not list it.
+    shown integer      -- 1 if the metric is on the line now, after any :hide-fields or :show-fields.
+);
+)";
+
+    struct cursor {
+        struct metric_row {
+            intern_string_t mr_format;
+            /** Owned by the format, which outlives the query. */
+            const metric_display_def* mr_def;
+            std::optional<bool> mr_hidden;
+            bool mr_shown;
+        };
+
+        sqlite3_vtab_cursor base;
+        std::vector<metric_row>::iterator c_iter;
+        std::vector<metric_row> c_rows;
+
+        explicit cursor(sqlite3_vtab* vt) : base({vt})
+        {
+            for (const auto& format : log_format::get_root_formats()) {
+                const auto* ext
+                    = dynamic_cast<const external_log_format*>(format.get());
+                if (ext == nullptr || !ext->elf_metric.is_defined()) {
+                    continue;
+                }
+
+                const auto& config = ext->elf_metric.md_display;
+                const auto& mds = *ext->elf_metric_display_state;
+                for (size_t lpc = 0; lpc < config.size(); lpc++) {
+                    const auto& mdd = config[lpc];
+                    const auto user_hidden = lpc < mds.mds_entry_hidden.size()
+                        ? mds.mds_entry_hidden[lpc]
+                        : std::nullopt;
+                    this->c_rows.emplace_back(metric_row{
+                        format->get_name(),
+                        &mdd,
+                        mdd.mdd_hidden,
+                        // With no display list, lnav shows the metrics that
+                        // vary, after the entries the user showed.  A
+                        // pattern is never a column of its own.
+                        !mdd.is_pattern()
+                            && !user_hidden.value_or(mdd.mdd_hidden),
+                    });
+                }
+                for (const auto& mdd : mds.mds_extra) {
+                    this->c_rows.emplace_back(
+                        metric_row{format->get_name(), &mdd, std::nullopt, true});
+                }
+                for (const auto& mdd : mds.mds_hidden) {
+                    this->c_rows.emplace_back(metric_row{
+                        format->get_name(), &mdd, std::nullopt, false});
+                }
+            }
+        }
+
+        int next()
+        {
+            if (this->c_iter != this->c_rows.end()) {
+                ++this->c_iter;
+            }
+            return SQLITE_OK;
+        }
+
+        int eof() { return this->c_iter == this->c_rows.end(); }
+
+        int reset()
+        {
+            this->c_iter = this->c_rows.begin();
+            return SQLITE_OK;
+        }
+
+        int get_rowid(sqlite3_int64& rowid_out)
+        {
+            rowid_out = this->c_iter - this->c_rows.begin();
+
+            return SQLITE_OK;
+        }
+    };
+
+    int get_column(const cursor& vc, sqlite3_context* ctx, int col)
+    {
+        const auto& mr = *vc.c_iter;
+        const auto& mdd = *mr.mr_def;
+        auto optional_real = [ctx](const std::optional<double>& val) {
+            if (val) {
+                to_sqlite(ctx, val.value());
+            } else {
+                sqlite3_result_null(ctx);
+            }
+        };
+
+        switch (col) {
+            case 0:
+                to_sqlite(ctx, mr.mr_format);
+                break;
+            case 1:
+                if (mdd.is_pattern()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, mdd.mdd_name);
+                }
+                break;
+            case 2:
+                if (mdd.is_pattern()) {
+                    to_sqlite(ctx,
+                              mdd.mdd_name_pattern.pp_value->get_pattern());
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            case 3:
+                if (mdd.mdd_short_name.empty()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, mdd.mdd_short_name);
+                }
+                break;
+            case 4:
+                optional_real(mdd.mdd_min);
+                break;
+            case 5:
+                optional_real(mdd.mdd_max);
+                break;
+            case 6:
+                if (mdd.mdd_unit_suffix.empty()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, mdd.mdd_unit_suffix);
+                }
+                break;
+            case 7:
+                optional_real(mdd.mdd_unit_divisor);
+                break;
+            case 8:
+                if (mr.mr_hidden) {
+                    to_sqlite(ctx, mr.mr_hidden.value());
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            case 9:
+                to_sqlite(ctx, mr.mr_shown);
                 break;
             default:
                 ensure(0);
@@ -1076,6 +1251,245 @@ CREATE TABLE lnav_db.lnav_file_value_stats (
     file_collection& lfvs_collection;
 };
 
+struct lnav_file_metrics {
+    static constexpr const char* NAME = "lnav_file_metrics";
+    static constexpr const char* CREATE_STMT = R"(
+-- The metrics in each open metrics file: a CSV whose columns are metrics, or
+-- a log whose format names the metric of each sample in the data.  It comes
+-- from what lnav kept while indexing, so it is quick to query, unlike a
+-- GROUP BY over all_metrics, which reads every sample.  For a counter, the
+-- statistics are of the changes between samples, as all_metrics shows them.
+-- Tags: metadata
+CREATE TABLE lnav_db.lnav_file_metrics (
+    filepath text,                 -- The path to the file.
+    format text,                   -- The name of the file's log format.
+    source text,                   -- The file's stem, as in all_metrics.
+    metric text,                   -- The name of the metric, as in all_metrics.
+    kind text,                     -- 'counter' if the samples are running totals, otherwise 'gauge'.
+    count integer,                 -- The number of values: samples for a gauge, changes for a counter.
+    min real,                      -- The smallest value.
+    max real,                      -- The largest value.
+    mean real,                     -- The mean of the values.
+    p50 real,                      -- The estimated median, for a metric that is a column, else NULL.
+    p90 real,                      -- The estimated 90th percentile, for a metric that is a column, else NULL.
+    p99 real,                      -- The estimated 99th percentile, for a metric that is a column, else NULL.
+    earliest DATETIME,             -- The time of the first sample.
+    latest DATETIME,               -- The time of the last sample.
+    earliest_usecs INTEGER HIDDEN, -- The earliest column, in microseconds since the epoch
+    latest_usecs INTEGER HIDDEN,   -- The latest column, in microseconds since the epoch
+    unit_suffix text HIDDEN,       -- The suffix the values are shown with, e.g. 's' or 'B', or NULL if the format gives none.  A CSV's cells carry their own, so it is NULL for a column of a CSV.
+    unit_divisor real HIDDEN,      -- What the values are divided by to be in the unit of the suffix, or 1 if they are not divided.
+    range_min real HIDDEN,         -- The lowest value the format says the metric can have, from its display entry or the first matching pattern, in the units of the values (like min) rather than of the suffix, or NULL.
+    range_max real HIDDEN          -- The highest value the format says the metric can have, as range_min, or NULL.
+);
+)";
+
+    struct cursor {
+        struct metric_row {
+            std::shared_ptr<logfile> mr_logfile;
+            intern_string_t mr_format;
+            intern_string_t mr_name;
+            bool mr_counter;
+            std::optional<metric_table::time_range> mr_times;
+            /** The unit the format shows the values with, as all_metrics. */
+            intern_string_t mr_unit_suffix;
+            double mr_unit_divisor{1.0};
+            /** The format's bounds for the metric, not divided. */
+            metric_range mr_range;
+        };
+
+        sqlite3_vtab_cursor base;
+        std::vector<metric_row>::iterator c_iter;
+        std::vector<metric_row> c_rows;
+
+        explicit cursor(sqlite3_vtab* vt) : base({vt})
+        {
+            const auto& fc
+                = ((vtab_module<tvt_no_update<lnav_file_metrics>>::vtab*) vt)
+                      ->v_impl.lfm_collection;
+
+            for (const auto& lf : fc.fc_files) {
+                const auto* format = lf->get_format_ptr();
+                if (format == nullptr || !format->lf_is_metric) {
+                    continue;
+                }
+
+                // The times of the file's earliest and latest samples: those
+                // of a metric that is a column, and the bounds for the others,
+                // whose first sample can be on a line that was dropped.  The
+                // lines needn't be in time order.
+                std::optional<metric_table::time_range> file_times;
+                const auto content_range = lf->get_content_time_range();
+                if (content_range.tr_begin <= content_range.tr_end) {
+                    file_times = metric_table::time_range{
+                        content_range.tr_begin,
+                        content_range.tr_end,
+                    };
+                }
+
+                const auto columns = format->metrics_are_columns();
+                const auto& metrics = lf->get_metrics();
+                for (const auto& name : lf->get_metric_names()) {
+                    auto times = columns ? file_times
+                                         : metrics.time_range_for(name);
+                    if (times && file_times && !columns) {
+                        times->tr_first
+                            = std::max(times->tr_first, file_times->tr_first);
+                        times->tr_last
+                            = std::min(times->tr_last, file_times->tr_last);
+                        if (times->tr_first > times->tr_last) {
+                            // Every sample was on lines that were dropped.
+                            times = std::nullopt;
+                        }
+                    }
+                    auto& row = this->c_rows.emplace_back(metric_row{
+                        lf,
+                        format->get_name(),
+                        name,
+                        !columns && metrics.is_counter(name),
+                        times,
+                    });
+                    const auto meta = format->get_metric_meta(name);
+                    if (meta) {
+                        row.mr_unit_suffix = meta->lvm_unit_suffix;
+                        if (meta->lvm_unit_divisor != 0.0) {
+                            row.mr_unit_divisor = meta->lvm_unit_divisor;
+                        }
+                    }
+                    row.mr_range
+                        = format->get_metric_range(name.to_string_fragment());
+                }
+            }
+        }
+
+        int next()
+        {
+            if (this->c_iter != this->c_rows.end()) {
+                ++this->c_iter;
+            }
+            return SQLITE_OK;
+        }
+
+        int eof() { return this->c_iter == this->c_rows.end(); }
+
+        int reset()
+        {
+            this->c_iter = this->c_rows.begin();
+            return SQLITE_OK;
+        }
+
+        int get_rowid(sqlite3_int64& rowid_out)
+        {
+            rowid_out = this->c_iter - this->c_rows.begin();
+
+            return SQLITE_OK;
+        }
+    };
+
+    explicit lnav_file_metrics(file_collection& fc) : lfm_collection(fc) {}
+
+    int get_column(const cursor& vc, sqlite3_context* ctx, int col)
+    {
+        const auto& mr = *vc.c_iter;
+        auto time_text = [ctx](std::chrono::microseconds us) {
+            char buf[64];
+            const auto len = sql_strftime(buf, sizeof(buf), to_timeval(us), 'T');
+            sqlite3_result_text(ctx, buf, len, SQLITE_TRANSIENT);
+        };
+
+        switch (col) {
+            case 0:
+                to_sqlite(ctx, mr.mr_logfile->get_filename());
+                break;
+            case 1:
+                to_sqlite(ctx, mr.mr_format);
+                break;
+            case 2:
+                to_sqlite(ctx, mr.mr_logfile->get_unique_path().stem());
+                break;
+            case 3:
+                to_sqlite(ctx, mr.mr_name);
+                break;
+            case 4:
+                sqlite3_result_text(ctx,
+                                    mr.mr_counter ? "counter" : "gauge",
+                                    -1,
+                                    SQLITE_STATIC);
+                break;
+            case 5:
+            case 6:
+            case 7:
+            case 8:
+            case 9:
+            case 10:
+            case 11: {
+                // Looked up again, since the file can have been indexed more
+                // since the cursor was opened.
+                static constexpr value_stats_col STATS_COLS[] = {
+                    value_stats_col::count,
+                    value_stats_col::min,
+                    value_stats_col::max,
+                    value_stats_col::mean,
+                    value_stats_col::p50,
+                    value_stats_col::p90,
+                    value_stats_col::p99,
+                };
+                value_stats_to_sqlite(
+                    ctx,
+                    mr.mr_logfile->stats_for_metric(mr.mr_name),
+                    STATS_COLS[col - 5]);
+                break;
+            }
+            case 12:
+            case 13:
+            case 14:
+            case 15: {
+                if (!mr.mr_times) {
+                    sqlite3_result_null(ctx);
+                    break;
+                }
+                const auto us = (col == 12 || col == 14)
+                    ? mr.mr_times->tr_first
+                    : mr.mr_times->tr_last;
+                if (col < 14) {
+                    time_text(us);
+                } else {
+                    sqlite3_result_int64(ctx, us.count());
+                }
+                break;
+            }
+            case 16:
+                if (mr.mr_unit_suffix.empty()) {
+                    sqlite3_result_null(ctx);
+                } else {
+                    to_sqlite(ctx, mr.mr_unit_suffix);
+                }
+                break;
+            case 17:
+                sqlite3_result_double(ctx, mr.mr_unit_divisor);
+                break;
+            case 18:
+            case 19: {
+                const auto& bound
+                    = col == 18 ? mr.mr_range.mr_min : mr.mr_range.mr_max;
+                if (bound) {
+                    sqlite3_result_double(ctx, bound.value());
+                } else {
+                    sqlite3_result_null(ctx);
+                }
+                break;
+            }
+            default:
+                sqlite3_result_null(ctx);
+                break;
+        }
+
+        return SQLITE_OK;
+    }
+
+    file_collection& lfm_collection;
+};
+
 struct lnav_format_value_stats {
     static constexpr const char* NAME = "lnav_format_value_stats";
     static constexpr const char* CREATE_STMT = R"(
@@ -1233,6 +1647,15 @@ struct injectable_lnav_file_value_stats
 auto file_value_stats_binder = injector::bind_multiple<vtab_module_base>()
                                    .add<injectable_lnav_file_value_stats>();
 
+struct injectable_lnav_file_metrics
+    : vtab_module<tvt_no_update<lnav_file_metrics>> {
+    using vtab_module::vtab_module;
+    using injectable = injectable_lnav_file_metrics(file_collection&);
+};
+
+auto file_metrics_binder = injector::bind_multiple<vtab_module_base>()
+                               .add<injectable_lnav_file_metrics>();
+
 auto format_value_stats_binder
     = injector::bind_multiple<vtab_module_base>()
           .add<vtab_module<tvt_no_update<lnav_format_value_stats>>>();
@@ -1240,5 +1663,9 @@ auto format_value_stats_binder
 auto format_values_binder
     = injector::bind_multiple<vtab_module_base>()
           .add<vtab_module<tvt_no_update<lnav_format_values>>>();
+
+auto format_metrics_binder
+    = injector::bind_multiple<vtab_module_base>()
+          .add<vtab_module<tvt_no_update<lnav_format_metrics>>>();
 
 }  // namespace

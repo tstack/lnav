@@ -1,0 +1,6 @@
+format,name,name_pattern,short_name,min,max,unit_suffix,unit_divisor,hidden,shown
+test_json_metrics_auto_log,disk.pct,<NULL>,<NULL>,0,100,<NULL>,<NULL>,1,0
+test_json_metrics_log,cpu.pct,<NULL>,cpu,0,100,<NULL>,<NULL>,0,1
+test_json_metrics_log,mem.used,<NULL>,mem,<NULL>,<NULL>,<NULL>,<NULL>,0,1
+test_json_metrics_log,requests,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,<NULL>,0,1
+test_json_metrics_log,disk.pct,<NULL>,<NULL>,0,100,<NULL>,<NULL>,1,0

@@ -40,7 +40,8 @@
 namespace humanize {
 
 // `try_from` reports both the parsed numeric value (normalized to the
-// base unit — e.g. "1.5KB" → 1500, "1ms" → 0.001) and the canonical
+// base unit — e.g. "1.5KB" → 1500, "1ms" → 0.001, and "42%" → 42, in
+// percentage points) and the canonical
 // unit suffix it was recognized as ("B" for bytes, "s" for seconds,
 // "Hz" for frequency, etc.).  Callers pair the two directly with
 // humanize::format(value, suffix).  For plain numbers without a unit,
@@ -73,9 +74,18 @@ std::string file_size(file_ssize_t value, alignment align);
 // tokens `try_from<double>` recognizes — "B" (bytes), "s" (seconds),
 // "Hz" (frequency), "W"/"V"/"A" (electrical), "%" (percent),
 // "iops"/"req/s"/"qps"/"pps"/"rps" (throughput), "/s" (per-second),
-// plus the bare SI count suffix for short_count.  Empty or
-// unrecognized suffixes degrade gracefully to `{value}{suffix}` with
-// no scaling so callers can call this unconditionally.
+// plus the bare SI count suffix for short_count.  A "%" value is in
+// percentage points and is shown without SI prefixes: a whole number as
+// is, otherwise with one decimal, or two significant digits below 1
+// (e.g. "38.7%", "0.03%").  With `alignment::columnar`, the number,
+// after any SI scaling, is a whole number without decimals, anything
+// else with two, or two significant digits when it would otherwise show
+// as zero (e.g. "12.50%", "3%", "1.20kHz", "999 Hz"); seconds and bytes
+// keep their own forms.  With no suffix, a
+// whole number is shown in full and anything else with 6 significant
+// digits.  Unrecognized suffixes degrade gracefully to
+// `{value}{suffix}` with no scaling so callers can call this
+// unconditionally.
 std::string format(double value,
                    string_fragment suffix,
                    alignment align = alignment::none);

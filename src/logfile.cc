@@ -587,6 +587,7 @@ logfile::reset_internal_state_for_reindex()
     this->lf_out_of_time_order_count = 0;
     this->lf_pattern_locks.pl_lines.clear();
     this->lf_value_stats.clear();
+    this->lf_metrics.clear();
     this->lf_opids.writeAccess()->clear();
     this->lf_thread_ids.writeAccess()->clear();
     this->lf_allocator.reset();
@@ -630,6 +631,7 @@ logfile::discard_index_before(size_t index)
     this->lf_index.erase(this->lf_index.begin(),
                          this->lf_index.begin() + count);
     this->lf_stmt_ids.discard_front(count);
+    this->lf_metrics.discard_front_lines();
     // Its pairs point into the arena, which is reset below.
     this->lf_line_ids.clear();
     this->reset_time_order();
@@ -1012,6 +1014,8 @@ logfile::build_content_map()
         this->lf_index.clear();
         this->lf_stmt_ids.clear();
         this->lf_line_ids.clear();
+        // Its changes are by line, and the lines are about to be re-read.
+        this->lf_metrics.clear();
         retval = rebuild_result_t::NEW_ORDER;
     }
 
@@ -1031,6 +1035,7 @@ logfile::build_content_map()
             this->lf_index.clear();
             this->lf_stmt_ids.clear();
             this->lf_line_ids.clear();
+            this->lf_metrics.clear();
             retval = rebuild_result_t::NEW_ORDER;
         }
         this->lf_file_size_at_map_time = full_size;
@@ -1095,6 +1100,7 @@ logfile::build_content_map()
         }
         this->lf_pattern_locks.pl_lines.clear();
         this->lf_value_stats.clear();
+        this->lf_metrics.clear();
         this->lf_index.clear();
         this->lf_stmt_ids.clear();
         this->lf_line_ids.clear();
@@ -1641,6 +1647,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 sbc_tmp.sbc_line_ids_set = false;
                 sbc_tmp.sbc_pattern_locks.pl_lines.clear();
                 sbc_tmp.sbc_value_stats.clear();
+                sbc_tmp.sbc_metrics.clear();
                 sbc_tmp.sbc_opids.los_opid_ranges.clear();
                 sbc_tmp.sbc_opids.los_sub_in_use.clear();
                 sbc_tmp.sbc_tids.clear();
@@ -1707,6 +1714,8 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                             sbc.sbc_opids = sbc_tmp.sbc_opids;
                             sbc.sbc_tids = sbc_tmp.sbc_tids;
                             sbc.sbc_value_stats = sbc_tmp.sbc_value_stats;
+                            sbc.sbc_metrics = sbc_tmp.sbc_metrics;
+                            sbc.sbc_metrics.set_prior(&this->lf_metrics);
                             sbc.sbc_pattern_locks = sbc_tmp.sbc_pattern_locks;
                             // Carry over what this candidate worked out about
                             // the timestamp, so the file keeps the format lock
@@ -1931,6 +1940,7 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 sbc.sbc_opids.clear();
                 sbc.sbc_tids.clear();
                 sbc.sbc_value_stats.clear();
+                sbc.sbc_metrics.clear();
                 // Its keys pointed into the arena that was just reset.
                 best_line_ids = std::nullopt;
                 retval = true;
@@ -2051,24 +2061,38 @@ logfile::process_prefix(shared_buffer_ref& sbr,
         }
     }
 
-    if (this->lf_format != nullptr && !this->lf_index.empty()
-        && !this->lf_index.back().is_ignored())
-    {
-        this->lf_content_time_range.extend_to(this->lf_index.back().get_time());
+    if (prescan_size < this->lf_index.size()) {
+        // The line's time can have been changed above, after its sample was
+        // recorded with the time it was scanned with.
+        sbc.sbc_metrics.retime_sample(
+            prescan_size,
+            this->lf_index[prescan_size].get_time<std::chrono::microseconds>());
     }
 
-    if (this->lf_format != nullptr && !this->lf_index.empty()
+    if (this->lf_format != nullptr && prescan_size < this->lf_index.size()
         && this->lf_index.back().get_time<>()
             > this->lf_options.loo_time_range.tr_end)
     {
         if (!this->lf_upper_bound_size) {
-            this->lf_upper_bound_size = this->lf_index.back().get_offset();
+            this->lf_upper_bound_size
+                = this->lf_index[prescan_size].get_offset();
             log_debug("%s:%zu: upper found in file found %llu",
                       this->lf_filename_as_string.c_str(),
-                      this->lf_index.size(),
+                      prescan_size,
                       this->lf_upper_bound_size.value());
         }
-        this->lf_index.pop_back();
+        // A JSON message can add several entries, so drop all of them.
+        while (this->lf_index.size() > prescan_size) {
+            this->lf_index.pop_back();
+        }
+        // And the message's sample.
+        sbc.sbc_metrics.drop_samples_from(this->lf_index.size());
+    }
+
+    if (this->lf_format != nullptr && prescan_size < this->lf_index.size()
+        && !this->lf_index.back().is_ignored())
+    {
+        this->lf_content_time_range.extend_to(this->lf_index.back().get_time());
     }
 
     if (prescan_size < this->lf_index.size()) {
@@ -2402,6 +2426,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             this->lf_pattern_locks,
             this->lf_time_scanner,
         };
+        sbc.sbc_metrics.set_prior(&this->lf_metrics);
         if (this->lf_format != nullptr) {
             // The scanner outlives this context -- it belongs to the file --
             // and already holds what earlier batches worked out.  Say which
@@ -2612,6 +2637,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 ? this->lf_format.get()
                 : nullptr;
             std::vector<logline_value_stats> kept_value_stats;
+            metric_table kept_metrics;
             std::optional<log_level_stats> kept_level_stats;
             size_t kept_invalid_total = 0;
             size_t kept_invalid_count = 0;
@@ -2620,6 +2646,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             if (uncounted_format != nullptr) {
                 kept_value_stats.resize(sbc.sbc_value_stats.size());
                 kept_value_stats.swap(sbc.sbc_value_stats);
+                std::swap(kept_metrics, sbc.sbc_metrics);
                 kept_level_stats = this->lf_level_stats;
                 kept_invalid_total = this->lf_invalid_lines.ili_total;
                 kept_invalid_count = this->lf_invalid_lines.ili_lines.size();
@@ -2630,6 +2657,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             if (uncounted_format != nullptr) {
                 if (this->lf_format.get() == uncounted_format) {
                     sbc.sbc_value_stats.swap(kept_value_stats);
+                    std::swap(sbc.sbc_metrics, kept_metrics);
                     sbc.sbc_opids = std::move(kept_opids.value());
                     sbc.sbc_tids = std::move(kept_tids.value());
                     this->lf_level_stats = std::move(kept_level_stats.value());
@@ -2691,6 +2719,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 while (this->lf_index.size() > old_size) {
                     this->lf_index.pop_back();
                 }
+                // And the samples on the lines dropped.
+                sbc.sbc_metrics.drop_samples_from(this->lf_index.size());
                 prev_range = file_range{li.li_file_range.fr_offset};
                 this->lf_indexing = false;
                 auto note_um
@@ -2928,6 +2958,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         for (size_t lpc = 0; lpc < sbc.sbc_value_stats.size(); lpc++) {
             this->lf_value_stats[lpc].merge(sbc.sbc_value_stats[lpc]);
         }
+        this->lf_metrics.merge(sbc.sbc_metrics);
         {
             safe::WriteAccess<safe_opid_state> writable_opid_map(
                 this->lf_opids);
@@ -3478,6 +3509,272 @@ logfile::stats_for_value(intern_string_t name) const
         if (index_opt.has_value()) {
             retval = &this->lf_value_stats[index_opt.value()];
         }
+    }
+
+    return retval;
+}
+
+const logline_value_stats*
+logfile::stats_for_metric(intern_string_t name) const
+{
+    if (this->lf_format == nullptr) {
+        return nullptr;
+    }
+    if (this->lf_format->metrics_are_columns()) {
+        return this->stats_for_value(name);
+    }
+
+    return this->lf_metrics.stats_for(name);
+}
+
+const logfile::metric_display_widths&
+logfile::widths_for_display(const metric_display_def& mdd) const
+{
+    static constexpr size_t MIN_COLUMN_WIDTH = 10;
+
+    auto& [generation, widths] = this->lf_metric_display_widths;
+    if (generation != this->lf_metrics.get_generation()) {
+        generation = this->lf_metrics.get_generation();
+        widths.clear();
+    }
+    // Keyed by the label too, since it is part of the line's width.
+    auto key = mdd.mdd_name;
+    key.push_back('\0');
+    key.append(mdd.get_label());
+    auto iter = widths.find(key);
+    if (iter != widths.end()) {
+        return iter->second;
+    }
+
+    struct series_times {
+        intern_string_t st_name;
+        std::optional<metric_table::time_range> st_times;
+    };
+    size_t value_width = MIN_COLUMN_WIDTH;
+    std::vector<series_times> series;
+    for (const auto& name : this->lf_metrics.get_names()) {
+        if (!mdd.matches(name.to_string_fragment())) {
+            continue;
+        }
+        series.emplace_back(
+            series_times{name, this->lf_metrics.time_range_for(name)});
+        const auto* stats = this->lf_metrics.stats_for(name);
+        if (stats != nullptr) {
+            value_width
+                = std::max(value_width, static_cast<size_t>(stats->lvs_width));
+        }
+    }
+
+    // Each series goes in the first column whose series were all sampled
+    // before it was, taking them by when they were first sampled, which
+    // uses as few columns as the overlaps allow.  The sort is stable, so
+    // series sampled at the same times keep the order they were seen in.
+    std::stable_sort(series.begin(),
+                     series.end(),
+                     [](const series_times& lhs, const series_times& rhs) {
+                         if (!lhs.st_times || !rhs.st_times) {
+                             return lhs.st_times.has_value()
+                                 && !rhs.st_times.has_value();
+                         }
+                         return lhs.st_times->tr_first < rhs.st_times->tr_first;
+                     });
+    std::vector<metric_display_column> columns;
+    std::vector<std::optional<std::chrono::microseconds>> columns_last;
+    for (const auto& st : series) {
+        auto col = columns.size();
+        if (st.st_times) {
+            for (size_t lpc = 0; lpc < columns.size(); lpc++) {
+                if (columns_last[lpc]
+                    && columns_last[lpc].value() < st.st_times->tr_first)
+                {
+                    col = lpc;
+                    break;
+                }
+            }
+        }
+        if (col == columns.size()) {
+            columns.emplace_back();
+            columns_last.emplace_back();
+        }
+        columns[col].mdc_series.emplace_back(st.st_name);
+        columns_last[col] = st.st_times
+            ? std::make_optional(st.st_times->tr_last)
+            : std::nullopt;
+    }
+
+    // The series' labels tell columns apart, so they are only needed when
+    // there is more than one.
+    size_t line_width = 0;
+    for (auto& column : columns) {
+        column.mdc_label = mdd.get_label();
+        if (columns.size() > 1 && column.mdc_series.size() == 1) {
+            const auto name = column.mdc_series.front().to_string_fragment();
+            column.mdc_label.append(name.data() + mdd.mdd_name.size(),
+                                    name.length() - mdd.mdd_name.size());
+        }
+        // Each cell is "  " + label + '=' + the padded value.
+        line_width += 3 + column.mdc_label.size() + value_width;
+    }
+    if (columns.empty()) {
+        line_width = 3 + mdd.get_label().size() + value_width;
+    }
+
+    return widths
+        .emplace(key,
+                 metric_display_widths{
+                     value_width, line_width, std::move(columns)})
+        .first->second;
+}
+
+size_t
+logfile::metric_display_width(const metric_display_def& mdd) const
+{
+    return this->widths_for_display(mdd).mdw_value;
+}
+
+size_t
+logfile::metric_display_line_width(const metric_display_def& mdd) const
+{
+    return this->widths_for_display(mdd).mdw_line;
+}
+
+const std::vector<logfile::metric_display_column>&
+logfile::metric_display_columns(const metric_display_def& mdd) const
+{
+    return this->widths_for_display(mdd).mdw_columns;
+}
+
+std::optional<double>
+logfile::metric_sample_number(const logline_value& lv)
+{
+    switch (lv.lv_meta.lvm_kind) {
+        case value_kind_t::VALUE_INTEGER:
+            return static_cast<double>(lv.lv_value.i);
+        case value_kind_t::VALUE_FLOAT:
+            return lv.lv_value.d;
+        default:
+            return std::nullopt;
+    }
+}
+
+std::optional<logline_value>
+logfile::metric_sample_as_shown(uint64_t line_number,
+                                const logline_value& sample)
+{
+    if (this->lf_format == nullptr || this->lf_format->metrics_are_columns()
+        || !this->lf_metrics.is_counter(sample.lv_meta.lvm_name))
+    {
+        return sample;
+    }
+
+    if (line_number >= this->lf_index.size()) {
+        return std::nullopt;
+    }
+
+    const auto time
+        = this->lf_index[line_number].get_time<std::chrono::microseconds>();
+    const auto generation = this->lf_metrics.get_generation();
+    if (!this->lf_metric_prev_totals
+        || this->lf_metric_prev_totals->mpt_time != time
+        || this->lf_metric_prev_totals->mpt_generation != generation)
+    {
+        auto& mpt = this->lf_metric_prev_totals.emplace();
+        mpt.mpt_time = time;
+        mpt.mpt_generation = generation;
+
+        const auto line_at = [this](size_t pos) -> size_t {
+            return this->lf_time_order.empty() ? pos
+                                               : this->lf_time_order[pos];
+        };
+        auto pos = this->time_order_lower_bound(time);
+        if (pos > 0) {
+            const auto prev_time = this->lf_index[line_at(pos - 1)]
+                                       .get_time<std::chrono::microseconds>();
+            string_attrs_t sa;
+            logline_value_vector values;
+            std::vector<logline_value> scratch;
+            for (; pos > 0; pos--) {
+                const auto prev_line = line_at(pos - 1);
+                auto line_iter = this->begin() + prev_line;
+                if (line_iter->get_time<std::chrono::microseconds>()
+                    != prev_time)
+                {
+                    break;
+                }
+                if (line_iter->is_continued() || line_iter->is_ignored()) {
+                    continue;
+                }
+                auto read_res = this->read_line(line_iter);
+                if (read_res.isErr()) {
+                    continue;
+                }
+                sa.clear();
+                values.clear();
+                values.lvv_sbr = read_res.unwrap();
+                this->lf_format->annotate(this, prev_line, sa, values);
+                for (const auto& lv :
+                     this->lf_format->get_metric_values(values, scratch))
+                {
+                    auto total = metric_sample_number(lv);
+                    if (total) {
+                        mpt.mpt_totals[lv.lv_meta.lvm_name] = total.value();
+                    }
+                }
+            }
+        }
+    }
+
+    std::optional<double> prev;
+    const auto& totals = this->lf_metric_prev_totals->mpt_totals;
+    auto iter = totals.find(sample.lv_meta.lvm_name);
+    if (iter != totals.end()) {
+        prev = iter->second;
+    }
+
+    return this->metric_sample_as_shown(sample, prev);
+}
+
+std::optional<logline_value>
+logfile::metric_sample_as_shown(const logline_value& sample,
+                                std::optional<double> prev_total) const
+{
+    if (this->lf_format == nullptr || this->lf_format->metrics_are_columns()
+        || !this->lf_metrics.is_counter(sample.lv_meta.lvm_name))
+    {
+        return sample;
+    }
+
+    const auto total = metric_sample_number(sample);
+    if (!total || !prev_total) {
+        return std::nullopt;
+    }
+
+    // A total that went down was reset, e.g. by a restart, so the new value
+    // is all that was counted since.
+    auto retval = sample;
+    retval.lv_meta.lvm_kind = value_kind_t::VALUE_FLOAT;
+    retval.lv_value.d = total.value() < prev_total.value()
+        ? total.value()
+        : total.value() - prev_total.value();
+    // The text in the file is the total, not the change.
+    retval.lv_origin = line_range{};
+
+    return retval;
+}
+
+std::vector<intern_string_t>
+logfile::get_metric_names() const
+{
+    std::vector<intern_string_t> retval;
+
+    if (this->lf_format == nullptr || !this->lf_format->lf_is_metric) {
+        return retval;
+    }
+    if (!this->lf_format->metrics_are_columns()) {
+        return this->lf_metrics.get_names();
+    }
+    for (const auto& meta : this->lf_format->get_value_metadata()) {
+        retval.emplace_back(meta.lvm_name);
     }
 
     return retval;

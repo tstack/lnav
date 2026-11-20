@@ -1,0 +1,5 @@
+log_time,source,metric,value
+2026-04-14T10:00:00.000000,logfile_metrics,cpu_pct,12.5
+2026-04-14T10:00:05.000000,logfile_metrics,cpu_pct,13.2
+2026-04-14T10:00:10.000000,logfile_metrics,cpu_pct,18.7
+2026-04-14T10:00:15.000000,logfile_metrics,cpu_pct,11.9

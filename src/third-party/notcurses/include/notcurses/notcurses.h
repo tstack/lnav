@@ -92,6 +92,7 @@ typedef enum {
 #define NCALIGN_TOP NCALIGN_LEFT
 #define NCALIGN_BOTTOM NCALIGN_RIGHT
 
+#define NCACS_BULLET "~"
 #define NCACS_ULCORNER "l"
 #define NCACS_LLCORNER "m"
 #define NCACS_URCORNER "k"

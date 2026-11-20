@@ -27,12 +27,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "cmds.hh"
+
 #include "base/auto_mem.hh"
 #include "base/intern_string.hh"
 #include "fmt/ranges.h"
-#include "lnav.hh"
-#include "cmds.hh"
 #include "lnav.commands.hh"
+#include "lnav.hh"
 #include "readline_highlighters.hh"
 #include "timeline_source.hh"
 
@@ -61,6 +62,39 @@ com_set_text_view_mode(exec_context& ec,
     }
 
     return Ok(retval);
+}
+
+/**
+ * Whether `name` is a field of `format`.  The metrics of a format that names
+ * them in the data are fields too, but the format can't tell a metric's name
+ * from a typo, so for those the name has to be one an open file has.
+ */
+static bool
+is_field_of(log_format& format, intern_string_t name)
+{
+    if (!format.lf_is_metric || format.metrics_are_columns()) {
+        return true;
+    }
+    if (format.get_field_states().count(name) > 0) {
+        return true;
+    }
+
+    const auto as_entry = metric_display_def{name.to_string(), {}};
+    for (const auto& ld : lnav_data.ld_log_source) {
+        const auto* lf = ld->get_file_ptr();
+        if (lf == nullptr
+            || lf->get_format_ptr()->get_name() != format.get_name())
+        {
+            continue;
+        }
+        for (const auto& metric_name : lf->get_metrics().get_names()) {
+            if (as_entry.matches(metric_name.to_string_fragment())) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 static Result<std::string, lnav::console::user_message>
@@ -115,22 +149,32 @@ com_toggle_field(exec_context& ec,
                         = intern_string::lookup(args[lpc].c_str(), dot);
 
                     format = log_format::find_root_format(format_name.get());
-                    if (!format) {
-                        return ec.make_error("unknown format -- {}",
-                                             format_name.to_string());
+                    if (format) {
+                        name = intern_string::lookup(
+                            &(args[lpc].c_str()[dot + 1]),
+                            args[lpc].length() - dot - 1);
                     }
-                    name = intern_string::lookup(&(args[lpc].c_str()[dot + 1]),
-                                                 args[lpc].length() - dot - 1);
-                } else if (tc->get_inner_height() == 0) {
-                    return ec.make_error("no log messages to hide");
-                } else {
+                }
+                if (!format) {
+                    // Without a format prefix, the name is a field of the
+                    // focused line's format, which can have dots in it, as
+                    // a metric's name often does.
+                    if (tc->get_inner_height() == 0) {
+                        if (dot != std::string::npos) {
+                            return ec.make_error("unknown format -- {}",
+                                                 args[lpc].substr(0, dot));
+                        }
+                        return ec.make_error("no log messages to hide");
+                    }
                     auto cl = lss.at(sel.value_or(0_vl));
                     auto lf = lss.find(cl);
                     format = lf->get_format();
                     name = intern_string::lookup(args[lpc]);
                 }
 
-                if (format && format->hide_field(name, hide)) {
+                if (format && is_field_of(*format, name)
+                    && format->hide_field(name, hide))
+                {
                     found_fields.push_back(args[lpc]);
                     if (hide) {
 #if 0

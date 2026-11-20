@@ -529,6 +529,7 @@ add_library(
         logfile_sub_source.cc
         logline_window.cc
         md2attr_line.cc
+        metric_names.cc
         md4cpp.cc
         msg.text.cc
         network-extension-functions.cc
@@ -678,6 +679,7 @@ add_library(
         logfile_fwd.hh
         logline_window.hh
         md2attr_line.hh
+        metric_names.hh
         md4cpp.hh
         msg.text.hh
         file_converter_manager.hh

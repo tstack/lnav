@@ -320,6 +320,19 @@ logline_window::logmsg_info::sibling_info::load() const
     this->si_loaded = true;
 }
 
+const std::vector<logline_value>&
+logline_window::logmsg_info::sibling_info::get_metric_values() const
+{
+    if (!this->si_metric_in_scratch) {
+        const auto& samples = this->si_lf->get_format_ptr()->get_metric_values(
+            this->get_values(), this->si_metric_scratch);
+        this->si_metric_in_scratch = (&samples == &this->si_metric_scratch);
+    }
+
+    return this->si_metric_in_scratch.value() ? this->si_metric_scratch
+                                              : this->si_values.lvv_values;
+}
+
 logline_window::logmsg_info::sibling_range
 logline_window::logmsg_info::metric_siblings(sibling_policy policy) const
 {
@@ -389,6 +402,11 @@ logline_window::logmsg_info::sibling_range::at(size_t offset) const
         auto line_iter = lf->begin() + line_number;
         if (line_iter->get_time<>() != this->sr_lead_time) {
             return {outcome::end, {}};
+        }
+        // A JSON message shows fields that aren't in its line-format on
+        // lines of their own, which are not samples.
+        if (line_iter->is_continued()) {
+            return {outcome::skip, {}};
         }
     }
     sibling_info info;

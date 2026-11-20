@@ -43,12 +43,36 @@ Features:
   decorated with reverse-video bars proportional to each
   column's observed min/max range.  When the row is
   focused, an overlay below it labels each column with the
-  source file stem.  Exports from Excel, PowerShell, and
-  Grafana should be handled as-is.
+  source file stem.  When metrics files are loaded along
+  with other logs, the nearest row of metrics above the
+  messages at the top of the LOG view is kept at the top,
+  so the metrics for that time stay in sight.
 * Added the `all_metrics` SQL virtual table, a long-format
   view across every open metrics file.  The `metric` column
   contains the name of the metric and `value` contains its
-  value.
+  value.  The hidden `kind` column says whether the metric
+  is a `counter` or a `gauge`, `change` has a counter's
+  change since its previous sample, and `log_time_usecs`
+  has the sample's time in microseconds.  Constraints on
+  `log_time`, `log_time_usecs`, and `metric` narrow the
+  scan, so a query for a short time range or for a few
+  metrics doesn't read every sample.
+* Added support for JSON-lines metrics logs where there
+  is one sample of a metric per line.  A log like this
+  can be described using a log format with a `metric`
+  section.  The section gives the fields with the name,
+  value, and kind of each sample.  The metrics for a
+  timestamp are then folded into single line for display.
+* Added the `lnav_file_metrics` SQL table, which lists the
+  metrics in each open metrics file with their kind,
+  statistics, and the times of their first and last
+  samples.  It is made from what was kept while indexing,
+  so it is quick to query.  The `lnav_format_metrics`
+  table lists the `display` entries of the loaded formats
+  and whether each is on the line now.  The fields from a
+  format's `metric` section have the `metric-name`,
+  `metric-value`, and `metric-kind` roles in
+  `lnav_format_values`.
 * The TIMELINE view now supports overlaying metric
   sparklines at the top of the view.  The following commands
   can be used to manage this:

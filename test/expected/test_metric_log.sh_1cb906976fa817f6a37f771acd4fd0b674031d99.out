@@ -1,0 +1,4 @@
+2026-11-17T06:00:10.000000  cpu=[7m [0m    12.50  mem{host=a}=[7m      1100[0m  mem{host=b}=            requests=[7m        30[0m
+ [1mSources:[0m                    logfile[33m⋯[0metrics  logfile_json_metrics    logfile_json_metrics    logfile_j[33m⋯[0mn_metrics
+2026-11-17T06:00:12.000Z INFO request four
+2026-11-17T06:00:20.000000  cpu=[7m [0m        3  mem{host=a}=[7m      1100[0m  mem{host=b}=[7m      2100[0m  requests=[7m [0m       20

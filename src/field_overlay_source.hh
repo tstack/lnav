@@ -77,6 +77,26 @@ public:
                                 std::vector<attr_line_t>& value_out) override;
 
     void build_field_lines(const listview_curses& lv, vis_line_t row);
+
+    /**
+     * Adds every metric sample on the row, from formats whose metrics are
+     * named in the data, grouped by the name before its labels.
+     */
+    void add_metric_samples(vis_line_t row);
+
+    /**
+     * The nearest row of metrics above `row`, which is kept at the top of
+     * the view when the lines at the top are other log messages, so the
+     * metrics for that time can still be seen.  Nothing when `row` is
+     * itself a row of metrics, or when there is none close enough above.
+     */
+    std::optional<vis_line_t> metric_row_above(vis_line_t row) const;
+    /**
+     * A key for what the rows of metrics look like: the samples in the
+     * files and the metrics the user chose to show.  Nothing when no open
+     * file has metrics.
+     */
+    std::optional<size_t> metric_state() const;
     /**
      * Append a row for each named search that matched the message loaded into
      * fos_log_helper, along with the text it matched.
@@ -133,6 +153,7 @@ public:
     bool fos_header_has_time_offset{false};
     bool fos_header_has_time_preview{false};
     bool fos_header_has_hidden_fields{false};
+    std::optional<size_t> fos_header_metric_state;
 
     struct row_info {
         std::optional<logline_value_meta> ri_meta;

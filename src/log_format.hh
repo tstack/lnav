@@ -54,6 +54,7 @@
 #include "line_buffer.hh"
 #include "log_format_fwd.hh"
 #include "logfile.hh"
+#include "metric_names.hh"
 #include "pcrepp/pcre2pp.hh"
 #include "robin_hood/robin_hood.h"
 #include "shared_buffer.hh"
@@ -62,6 +63,89 @@ struct sqlite3;
 class logfile;
 class log_vtab_manager;
 struct exec_context;
+
+/**
+ * The range a metric's values are known to fall in, e.g. 0 to 100 for a
+ * percentage.  A bound that isn't known is the lowest or highest value in
+ * the file.
+ */
+struct metric_range {
+    std::optional<double> mr_min;
+    std::optional<double> mr_max;
+};
+
+/**
+ * A metric that a metric format shows on the LOG view's line, and how.
+ */
+struct metric_display_def {
+    /**
+     * The name of the metric.  It also matches a metric whose name is this
+     * followed by labels, e.g. "cpu" matches "cpu[host:a]" and "cpu{a=1}".
+     */
+    std::string mdd_name;
+    /** What is shown for it on the line, if not mdd_name. */
+    std::string mdd_short_name;
+    /**
+     * The range its values are known to fall in, e.g. 0 to 100 for a
+     * percentage, which its bars are drawn against.  A bound that isn't
+     * given is the lowest or highest value in the file.
+     */
+    std::optional<double> mdd_min;
+    std::optional<double> mdd_max;
+    /**
+     * The suffix its values are humanized with, e.g. "B" for bytes, in
+     * place of the one for the format's value field.
+     */
+    intern_string_t mdd_unit_suffix;
+    /**
+     * What its values are divided by to be in the unit of the suffix, in
+     * place of the one for the format's value field.  mdd_min and mdd_max
+     * are in that unit.
+     */
+    std::optional<double> mdd_unit_divisor;
+
+    /**
+     * Not shown on the line unless the user asks, though its range and
+     * label still apply.
+     */
+    bool mdd_hidden{false};
+    /**
+     * In place of mdd_name, a pattern for the names of the metrics the entry
+     * is for, without their labels.  Such an entry is never a column on the
+     * line: it gives the metrics it matches its range and unit and, if it is
+     * hidden, keeps them off the line.
+     */
+    factory_container<lnav::pcre2pp::code> mdd_name_pattern;
+
+    bool is_pattern() const
+    {
+        return this->mdd_name_pattern.pp_value != nullptr;
+    }
+
+    bool matches(string_fragment metric_name) const
+    {
+        if (this->is_pattern()) {
+            return this->mdd_name_pattern.pp_value
+                ->find_in(lnav::metrics::base_name(metric_name))
+                .ignore_error()
+                .has_value();
+        }
+        if (!metric_name.startswith(this->mdd_name.c_str())) {
+            return false;
+        }
+        if (metric_name.length() == (int) this->mdd_name.size()) {
+            return true;
+        }
+        return lnav::metrics::is_label_start(
+            metric_name[this->mdd_name.size()]);
+    }
+
+    const std::string& get_label() const
+    {
+        return this->mdd_short_name.empty() ? this->mdd_name
+                                            : this->mdd_short_name;
+    }
+};
 
 struct logline_value_name_cmp {
     explicit logline_value_name_cmp(const intern_string_t* name)
@@ -379,6 +463,97 @@ public:
     virtual std::vector<logline_value_meta> get_value_metadata() const
     {
         return {};
+    }
+
+    /**
+     * The metric samples in a row of a metric format (lf_is_metric), from
+     * its annotated `values`.  When each column is a metric, the samples are
+     * the values themselves.  A format with one sample per line instead
+     * fills `scratch` with a single value named after the metric and returns
+     * that.
+     */
+    virtual const std::vector<logline_value>& get_metric_values(
+        const logline_value_vector& values,
+        std::vector<logline_value>& scratch) const
+    {
+        return values.lvv_values;
+    }
+
+    /**
+     * The number of samples get_metric_values() gives for a row, without
+     * having to load it.
+     */
+    virtual size_t get_metric_value_count() const
+    {
+        return this->get_value_metadata_count();
+    }
+
+    /**
+     * Whether each metric of a metric format is a column of its table, as
+     * opposed to a name held in the data of a column.
+     */
+    virtual bool metrics_are_columns() const { return true; }
+
+    /**
+     * Whether a field holds part of a metric sample (its name, value or
+     * kind) when the metrics are not columns, so the field is shown with
+     * the samples rather than as a field of its own.
+     */
+    virtual bool is_metric_sample_field(intern_string_t name) const
+    {
+        return false;
+    }
+
+    /**
+     * The metrics a metric format shows on the LOG view's line, in order, or
+     * nullptr to leave the choice to lnav.
+     */
+    virtual const std::vector<metric_display_def>* get_metric_display() const
+    {
+        return nullptr;
+    }
+
+    /**
+     * Whether the user hid a metric that lnav would otherwise pick to show,
+     * when get_metric_display() leaves the choice to lnav.
+     */
+    virtual bool is_metric_hidden(string_fragment name) const { return false; }
+
+    /**
+     * Whether the user asked to see a metric, when get_metric_display()
+     * leaves the choice to lnav: it is then shown with the metrics that vary.
+     */
+    virtual bool is_metric_shown(string_fragment name) const { return false; }
+
+    /**
+     * Changes whenever the user changes which metrics are shown, so what is
+     * worked out from that can be kept until then.
+     */
+    virtual size_t get_metric_display_generation() const { return 0; }
+
+    /**
+     * The range the format declares for a metric's values, which its bars
+     * are drawn against.
+     */
+    virtual metric_range get_metric_range(string_fragment name) const
+    {
+        return {};
+    }
+
+    /**
+     * The meta for the values of a metric of a metric format, or nullopt if
+     * the format has no such column.  When metrics are not columns, any name
+     * gets the meta of the column that holds the values, renamed.
+     */
+    virtual std::optional<logline_value_meta> get_metric_meta(
+        intern_string_t name) const
+    {
+        for (auto& lvm : this->get_value_metadata()) {
+            if (lvm.lvm_name == name) {
+                return lvm;
+            }
+        }
+        return std::nullopt;
     }
 
     virtual bool format_changed() { return false; }

@@ -1,0 +1,17 @@
+{"ts": "2026-11-17T06:00:00Z", "name": "cpu.pct[cc:a]", "value": 10, "type": "gauge"}
+{"ts": "2026-11-17T06:00:00Z", "name": "mem.used{host=a}", "value": 100, "type": "gauge"}
+{"ts": "2026-11-17T06:00:00Z", "name": "mem.used{host=b}", "value": 200, "type": "gauge"}
+{"ts": "2026-11-17T06:00:00Z", "name": "requests[cc:a]", "value": 5, "type": "counter"}
+{"ts": "2026-11-17T06:00:10Z", "name": "cpu.pct[cc:a]", "value": 20, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "mem.used{host=a}", "value": 110, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "mem.used{host=b}", "value": 210, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "requests[cc:a]", "value": 8, "type": "counter"}
+{"ts": "2026-11-17T06:00:10Z", "name": "requests[cc:b]", "value": 1, "type": "counter"}
+{"ts": "2026-11-17T06:00:20Z", "name": "cpu.pct[cc:b]", "value": 30, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "mem.used{host=a}", "value": 120, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "mem.used{host=b}", "value": 220, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "requests[cc:b]", "value": 4, "type": "counter"}
+{"ts": "2026-11-17T06:00:30Z", "name": "cpu.pct[cc:b]", "value": 40, "type": "gauge"}
+{"ts": "2026-11-17T06:00:30Z", "name": "mem.used{host=a}", "value": 130, "type": "gauge"}
+{"ts": "2026-11-17T06:00:30Z", "name": "mem.used{host=b}", "value": 230, "type": "gauge"}
+{"ts": "2026-11-17T06:00:30Z", "name": "requests[cc:b]", "value": 9, "type": "counter"}

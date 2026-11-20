@@ -1,0 +1,4 @@
+log_time,metric,value,change
+2026-11-17T06:00:10.000000,requests,130,30
+2026-11-17T06:00:20.000000,mem.used{host=b},2100,<NULL>
+2026-11-17T06:00:20.000000,requests,20,20

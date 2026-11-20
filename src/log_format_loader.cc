@@ -1016,6 +1016,98 @@ static const struct json_path_container opid_handlers = {
         .with_children(subid_description_handlers),
 };
 
+static const struct json_path_container metric_display_handlers = {
+    yajlpp::property_handler("name")
+        .with_synopsis("<metric>")
+        .with_description(
+            "The name of the metric.  It also matches a metric whose name is "
+            "this followed by labels that start with '[', '{', ';' or ','.")
+        .for_field(&metric_display_def::mdd_name),
+    yajlpp::property_handler("name-pattern")
+        .with_synopsis("<regex>")
+        .with_description(
+            "In place of a name, a regular expression for the names of the "
+            "metrics this entry is for, without their labels.  The entry is "
+            "not a column on the line: it gives the metrics it matches its "
+            "min, max, suffix, and divisor, and, if it is hidden, keeps them "
+            "off the line.  A setting a matching entry with a name leaves out "
+            "comes from the first matching pattern that has it.")
+        .with_example("\\.bytes$"_frag)
+        .for_field(&metric_display_def::mdd_name_pattern),
+    yajlpp::property_handler("short-name")
+        .with_synopsis("<label>")
+        .with_description("What is shown for the metric, if not its name")
+        .for_field(&metric_display_def::mdd_short_name),
+    yajlpp::property_handler("min")
+        .with_synopsis("<number>")
+        .with_description(
+            "The lowest value the metric can have, e.g. 0 for a percentage, "
+            "which its bars are drawn from.  Without it, the lowest value in "
+            "the file is used.")
+        .for_field(&metric_display_def::mdd_min),
+    yajlpp::property_handler("max")
+        .with_synopsis("<number>")
+        .with_description(
+            "The highest value the metric can have, e.g. 100 for a "
+            "percentage, which its bars are drawn to.  Without it, the "
+            "highest value in the file is used.")
+        .for_field(&metric_display_def::mdd_max),
+    yajlpp::property_handler("suffix")
+        .with_synopsis("<suffix>")
+        .with_description(
+            "The display suffix for the metric's values, which picks how "
+            "they are humanized (e.g. \"B\" for bytes, \"s\" for seconds), "
+            "in place of the one for the value field.")
+        .with_example("B"_frag)
+        .for_field(&metric_display_def::mdd_unit_suffix),
+    yajlpp::property_handler("divisor")
+        .with_synopsis("<number>")
+        .with_exclusive_min_value(0)
+        .with_description(
+            "What the metric's values are divided by to be in the unit of "
+            "the suffix, in place of the one for the value field, e.g. 1000 "
+            "for milliseconds with a suffix of \"s\".  The min and max are "
+            "in that unit.")
+        .for_field(&metric_display_def::mdd_unit_divisor),
+    yajlpp::property_handler("hidden")
+        .with_synopsis("<bool>")
+        .with_description(
+            "Leave the metric off the line unless it is shown with "
+            ":show-fields.  Its short-name, min, and max still apply.")
+        .for_field(&metric_display_def::mdd_hidden),
+};
+
+static const struct json_path_container metric_handlers = {
+    yajlpp::property_handler("name-field")
+        .with_synopsis("<field>")
+        .with_description(
+            "The field that holds the name of the metric a line is a sample of")
+        .for_field(&external_log_format::metric_def::md_name_field),
+    yajlpp::property_handler("value-field")
+        .with_synopsis("<field>")
+        .with_description("The numeric field that holds the sample's value")
+        .for_field(&external_log_format::metric_def::md_value_field),
+    yajlpp::property_handler("kind-field")
+        .with_synopsis("<field>")
+        .with_description("The field that says what kind of metric a sample "
+                          "is of, see counter-kinds")
+        .for_field(&external_log_format::metric_def::md_kind_field),
+    yajlpp::property_handler("counter-kinds#")
+        .with_synopsis("<kind>")
+        .with_description(
+            "The values of the kind-field for a counter, whose samples are "
+            "running totals and are shown as the change since the previous "
+            "sample.  Samples of any other kind are of a gauge, shown as is.")
+        .for_field(&external_log_format::metric_def::md_counter_kinds),
+    yajlpp::property_handler("display#")
+        .with_description(
+            "The metrics to show on the line in the LOG view, in order, and "
+            "how to show them.  Without an entry that is not hidden, lnav "
+            "shows the metrics whose values change, as many as fit.")
+        .for_field(&external_log_format::metric_def::md_display)
+        .with_children(metric_display_handlers),
+};
+
 const struct json_path_container format_handlers = {
     yajlpp::property_handler("regex")
         .with_description(
@@ -1142,6 +1234,12 @@ const struct json_path_container format_handlers = {
     yajlpp::property_handler("opid")
         .with_description("Definitions related to operations found in logs")
         .with_children(opid_handlers),
+    yajlpp::property_handler("metric")
+        .with_description("Indicates that each log message is a sample of a "
+                          "metric, and the fields that hold its name and "
+                          "value")
+        .for_child(&external_log_format::elf_metric)
+        .with_children(metric_handlers),
     yajlpp::property_handler("ordered-by-time")
         .with_synopsis("<bool>")
         .with_description(

@@ -1,0 +1,31 @@
+[1m[31m✘[0m [1m[31merror[0m: “(” is not a valid regular expression
+ [1m[31mreason[0m: missing closing parenthesis
+[36m --> [0m[1m/invalid_metric_log/metric/display#/name-pattern[0m
+[36m | [0m[1;7m[32m[40m(                                       [0m
+[36m | [0m[37m[40m [0m[1m[31m[40m^ [0m[1m[31m[40mmissing closing parenthesis[0m[37m[40m          [0m
+[36m --> [0m[1m{test_dir}/bad-config-metric/formats/invalid-metric/format.json[0m:27
+[36m | [0m[37m[40m                    "name-pattern": "(" [0m
+[36m =[0m [36mhelp[0m: [1mProperty Synopsis[0m
+           [1m/invalid_metric_log/metric/display#/name-pattern[0m [4m<regex>[0m
+         [1mDescription[0m
+           In place of a name, a regular expression for the names of the metrics this entry is for, without their labels.  The entry is not a column on the line: it gives the metrics it matches its min, max, suffix, and divisor, and, if it is hidden, keeps them off the line.  A setting a matching entry with a name leaves out comes from the first matching pattern that has it.
+         [1mExample[0m
+           \.bytes$
+[1m[31m✘[0m [1m[31merror[0m: “[1minvalid_metric_log[0m” is not a valid log format
+ [1m[31mreason[0m: “[1mmetric/value-field[0m” refers to “[1mlabel[0m”, which must have a kind of “[1minteger[0m” or “[1mfloat[0m”
+[36m --> [0m[1m{test_dir}/bad-config-metric/formats/invalid-metric/format.json[0m:3
+[1m[31m✘[0m [1m[31merror[0m: “[1minvalid_metric_log[0m” is not a valid log format
+ [1m[31mreason[0m: “[1mmetric/kind-field[0m” must be set when “[1mmetric/counter-kinds[0m” is used
+[36m --> [0m[1m{test_dir}/bad-config-metric/formats/invalid-metric/format.json[0m:3
+[1m[31m✘[0m [1m[31merror[0m: “[1minvalid_metric_log[0m” is not a valid log format
+ [1m[31mreason[0m: “[1mmetric/display/0/name[0m” or “[1mmetric/display/0/name-pattern[0m” must be set
+[36m --> [0m[1m{test_dir}/bad-config-metric/formats/invalid-metric/format.json[0m:3
+[1m[31m✘[0m [1m[31merror[0m: “[1minvalid_metric_log[0m” is not a valid log format
+ [1m[31mreason[0m: “[1mmetric/display/1/min[0m” must be less than “[1mmetric/display/1/max[0m”
+[36m --> [0m[1m{test_dir}/bad-config-metric/formats/invalid-metric/format.json[0m:3
+[1m[31m✘[0m [1m[31merror[0m: “[1minvalid_metric_log[0m” is not a valid log format
+ [1m[31mreason[0m: only one of “[1mmetric/display/2/name[0m” or “[1mmetric/display/2/name-pattern[0m” can be set
+[36m --> [0m[1m{test_dir}/bad-config-metric/formats/invalid-metric/format.json[0m:3
+[1m[31m✘[0m [1m[31merror[0m: “[1minvalid_metric_log[0m” is not a valid log format
+ [1m[31mreason[0m: “[1mmetric/display/3/name[0m” or “[1mmetric/display/3/name-pattern[0m” must be set
+[36m --> [0m[1m{test_dir}/bad-config-metric/formats/invalid-metric/format.json[0m:3

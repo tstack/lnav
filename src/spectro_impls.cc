@@ -146,15 +146,39 @@ for_each_metric_row_value(logfile_sub_source& lss,
 {
     logline_window::logmsg_info lead_msg{lss, vl};
     for (const auto& sib : lead_msg.metric_siblings()) {
-        if (sib.get_file_ptr()->stats_for_value(colname) == nullptr) {
+        auto* sib_lf = sib.get_file_ptr();
+        if (sib_lf->stats_for_metric(colname) == nullptr) {
+            // A field of the format that is not one of its metrics.  It
+            // might not be in the line-format, so the whole message is read
+            // rather than just the row.
+            if (sib_lf->stats_for_value(colname) == nullptr) {
+                continue;
+            }
+            auto line_iter = sib_lf->begin() + sib.get_file_line_number();
+            logline_value_vector values;
+            sib_lf->read_full_message(line_iter, values.lvv_sbr);
+            values.lvv_sbr.erase_ansi();
+            string_attrs_t sa;
+            sib_lf->get_format_ptr()->annotate(
+                sib_lf, sib.get_file_line_number(), sa, values);
+            auto lv_iter = std::find_if(values.lvv_values.begin(),
+                                        values.lvv_values.end(),
+                                        logline_value_name_cmp(&colname));
+            if (lv_iter != values.lvv_values.end()) {
+                on_value(*lv_iter);
+            }
             continue;
         }
-        const auto& sib_values = sib.get_values();
-        auto lv_iter = std::find_if(sib_values.lvv_values.begin(),
-                                    sib_values.lvv_values.end(),
-                                    logline_value_name_cmp(&colname));
-        if (lv_iter != sib_values.lvv_values.end()) {
-            on_value(*lv_iter);
+        const auto& samples = sib.get_metric_values();
+        auto lv_iter = std::find_if(
+            samples.begin(), samples.end(), logline_value_name_cmp(&colname));
+        if (lv_iter == samples.end()) {
+            continue;
+        }
+        auto shown = sib_lf->metric_sample_as_shown(
+            sib.get_file_line_number(), *lv_iter);
+        if (shown) {
+            on_value(shown.value());
         }
     }
 }
@@ -167,11 +191,17 @@ log_spectro_value_source::log_spectro_value_source(intern_string_t colname)
         if (lf == nullptr) {
             continue;
         }
-        for (auto& lvm : lf->get_format_ptr()->get_value_metadata()) {
+        const auto* format = lf->get_format_ptr();
+        for (auto& lvm : format->get_value_metadata()) {
             if (lvm.lvm_name == this->lsvs_colname) {
                 this->lsvs_meta = lvm;
                 break;
             }
+        }
+        if (!this->lsvs_meta && format->lf_is_metric
+            && lf->stats_for_metric(this->lsvs_colname) != nullptr)
+        {
+            this->lsvs_meta = format->get_metric_meta(this->lsvs_colname);
         }
         if (this->lsvs_meta) {
             break;
@@ -195,7 +225,13 @@ log_spectro_value_source::update_stats()
             continue;
         }
 
-        const auto* stats = lf->stats_for_value(this->lsvs_colname);
+        // A metric that isn't a column has its stats kept by name.
+        const auto* stats = lf->get_format_ptr()->lf_is_metric
+            ? lf->stats_for_metric(this->lsvs_colname)
+            : nullptr;
+        if (stats == nullptr) {
+            stats = lf->stats_for_value(this->lsvs_colname);
+        }
 
         if (stats == nullptr) {
             continue;

@@ -1,0 +1,6 @@
+{"ts": "2020-01-01T06:00:00Z", "name": "zeta.count", "value": 7, "type": "gauge"}
+{"ts": "2020-01-01T06:00:00Z", "name": "METER.requests", "value": 3, "type": "gauge"}
+{"ts": "2020-01-01T06:00:00Z", "name": "alpha.used{host=b}", "value": 20, "type": "gauge"}
+{"ts": "2020-01-01T06:00:00Z", "name": "mem.used", "value": 512, "type": "gauge"}
+{"ts": "2020-01-01T06:00:00Z", "name": "Beta.rate", "value": 1.5, "type": "gauge"}
+{"ts": "2020-01-01T06:00:00Z", "name": "alpha.used{host=a}", "value": 10, "type": "gauge"}

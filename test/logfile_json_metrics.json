@@ -1,0 +1,17 @@
+{"ts": "2026-11-17T06:00:00Z", "name": "cpu.pct", "value": 7.25, "type": "gauge"}
+{"ts": "2026-11-17T06:00:00Z", "name": "mem.used{host=a}", "value": 1024, "type": "gauge"}
+{"ts": "2026-11-17T06:00:00Z", "name": "mem.used{host=b}", "value": 2048, "type": "gauge"}
+{"ts": "2026-11-17T06:00:00Z", "name": "requests", "value": 100, "type": "counter"}
+{"ts": "2026-11-17T06:00:00Z", "name": "disk.pct", "value": 42.5, "type": "gauge"}
+{"ts": "2026-11-17T06:00:00Z", "name": "queue.depth", "value": 3, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "cpu.pct", "value": 12.5, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "mem.used{host=a}", "value": 1100, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "requests", "value": 130, "type": "counter"}
+{"ts": "2026-11-17T06:00:10Z", "name": "disk.pct", "value": 42.75, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "queue.depth", "value": 5, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "cpu.pct", "value": 3.0, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "mem.used{host=a}", "value": 1100, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "mem.used{host=b}", "value": 2100, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "requests", "value": 20, "type": "counter"}
+{"ts": "2026-11-17T06:00:20Z", "name": "disk.pct", "value": 43, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "queue.depth", "value": 3, "type": "gauge"}

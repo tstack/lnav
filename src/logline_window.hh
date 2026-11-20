@@ -162,6 +162,10 @@ public:
                 this->load();
                 return this->si_attrs;
             }
+            /**
+             * The row's metric samples, see log_format::get_metric_values().
+             */
+            const std::vector<logline_value>& get_metric_values() const;
 
         private:
             friend class logmsg_info;
@@ -172,6 +176,11 @@ public:
             mutable logline_value_vector si_values;
             mutable string_attrs_t si_attrs;
             mutable bool si_loaded{false};
+            mutable std::vector<logline_value> si_metric_scratch;
+            // Whether the samples are in si_metric_scratch rather than
+            // si_values, once worked out.  Kept as a flag instead of a
+            // pointer so a copy of this record stays valid.
+            mutable std::optional<bool> si_metric_in_scratch;
 
             void load() const;
         };

@@ -1,0 +1,15 @@
+{"ts": "2026-11-17T06:00:00Z", "name": "cpu.pct", "value": 7.25, "type": "gauge"}
+{"ts": "2026-11-17T06:00:00Z", "name": "heap.used.bytes{host=a}", "value": 1048576, "type": "gauge"}
+{"ts": "2026-11-17T06:00:00Z", "name": "gc.pause_ms", "value": 12, "type": "gauge"}
+{"ts": "2026-11-17T06:00:00Z", "name": "net.sent.bytes", "value": 1000, "type": "counter"}
+{"ts": "2026-11-17T06:00:00Z", "name": "debug.queue", "value": 1, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "cpu.pct", "value": 12.5, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "heap.used.bytes{host=a}", "value": 2097152, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "gc.pause_ms", "value": 250, "type": "gauge"}
+{"ts": "2026-11-17T06:00:10Z", "name": "net.sent.bytes", "value": 4000, "type": "counter"}
+{"ts": "2026-11-17T06:00:10Z", "name": "debug.queue", "value": 2, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "cpu.pct", "value": 3.0, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "heap.used.bytes{host=a}", "value": 1572864, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "gc.pause_ms", "value": 1500, "type": "gauge"}
+{"ts": "2026-11-17T06:00:20Z", "name": "net.sent.bytes", "value": 10000, "type": "counter"}
+{"ts": "2026-11-17T06:00:20Z", "name": "debug.queue", "value": 3, "type": "gauge"}
