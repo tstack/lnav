@@ -19,7 +19,7 @@ jobs:
       - name: Update apt
         run: sudo apt-get update
       - name: Install packages
-        run: sudo apt-get install automake autoconf g++ libsqlite3-dev libbz2-dev libcurl4-openssl-dev zlib1g-dev lcov libunistring-dev pipx
+        run: sudo apt-get install automake autoconf g++ libsqlite3-dev libbz2-dev libcurl4-openssl-dev zlib1g-dev lcov libunistring-dev pipx tzdata-legacy
       - name: install cpp-coveralls
         run: |
           git clone https://github.com/CrowCpp/cpp-coveralls.git
@@ -81,6 +81,7 @@ jobs:
           libunistring-dev
           pipx
           tshark
+          tzdata-legacy
           zlib1g-dev
       - name: Install python packages
         run: pipx install check-jsonschema

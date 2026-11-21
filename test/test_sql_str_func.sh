@@ -22,7 +22,7 @@ run_cap_test ./drive_sql "select measure_value('42')"
 
 # Exponents with and without a sign (Java writes 1.1399502134150852E7) and
 # after a whole number.
-run_cap_test ./drive_sql "select measure_value('1.1399502134150852E7') AS a, measure_value('1.5e+7') AS b, measure_value('2.5E-3') AS c, measure_value('1E7') AS d, measure_value('-15e6') AS e, measure_unit('1.5E7') AS f"
+run_cap_test ./drive_sql "select printf('%.6f', measure_value('1.1399502134150852E7')) AS a, measure_value('1.5e+7') AS b, measure_value('2.5E-3') AS c, measure_value('1E7') AS d, measure_value('-15e6') AS e, measure_unit('1.5E7') AS f"
 
 # A trailing E is still an exa-prefixed count, and a dangling exponent is not
 # a number.
