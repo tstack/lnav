@@ -1344,26 +1344,19 @@ ptime_z(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
             return false;
         }
 
-        for (const auto index : {1, 2, 3 + skip_colon, 4 + skip_colon}) {
-            if (str[off_inout + index] < '0'
-                || str[off_inout + index] > '9')
-            {
-                return false;
-            }
-        }
-        if (str[off_inout + 1] > '2'
-            || (str[off_inout + 1] == '2' && str[off_inout + 2] > '3')
-            || str[off_inout + skip_colon + 3] > '5')
+        const auto h1 = str[off_inout + 1];
+        const auto h2 = str[off_inout + 2];
+        const auto m1 = str[off_inout + skip_colon + 3];
+        const auto m2 = str[off_inout + skip_colon + 4];
+
+        if (h1 < '0' || h1 > '2' || h2 < '0' || h2 > (h1 == '2' ? '3' : '9')
+            || m1 < '0' || m1 > '5' || m2 < '0' || m2 > '9')
         {
             return false;
         }
 
-        hours
-            = ((str[off_inout + 1] - '0') * 10 + (str[off_inout + 2] - '0') * 1)
-            * 60 * 60;
-        mins = ((str[off_inout + skip_colon + 3] - '0') * 10
-                + (str[off_inout + skip_colon + 4] - '0') * 1)
-            * 60;
+        hours = ((h1 - '0') * 10 + (h2 - '0')) * 60 * 60;
+        mins = ((m1 - '0') * 10 + (m2 - '0')) * 60;
         if (skip_colon) {
             dst->et_flags |= ETF_Z_COLON;
         }
