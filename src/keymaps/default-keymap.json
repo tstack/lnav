@@ -97,6 +97,9 @@
                 "x06": {
                     "command": ":toggle-filtering"
                 },
+                "x0b": {
+                    "command": ":toggle-max-log-space"
+                },
                 "x0c": {
                     "command": ":write-screen-to -"
                 },

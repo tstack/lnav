@@ -64,6 +64,24 @@ com_set_text_view_mode(exec_context& ec,
 }
 
 static Result<std::string, lnav::console::user_message>
+com_toggle_max_log_space(exec_context& ec,
+                         std::string cmdline,
+                         std::vector<std::string>& args)
+{
+    std::string retval;
+
+    if (!ec.ec_dry_run) {
+        lnav_data.ld_max_log_space = !lnav_data.ld_max_log_space;
+        retval = lnav_data.ld_max_log_space
+            ? "info: maximum log space enabled"
+            : "info: maximum log space disabled";
+        lnav_data.ld_winched = true;
+    }
+
+    return Ok(retval);
+}
+
+static Result<std::string, lnav::console::user_message>
 com_toggle_field(exec_context& ec,
                  std::string cmdline,
                  std::vector<std::string>& args)
@@ -455,6 +473,17 @@ static lnav::commands::command_t DISPLAY_COMMANDS[] = {
                                     "raw"_frag,
                                     "rendered"_frag,
                                 }))
+            .with_tags({"display"}),
+    },
+    {
+        "toggle-max-log-space",
+        com_toggle_max_log_space,
+
+        help_text(":toggle-max-log-space")
+            .with_effect(help_effect_t::view)
+            .with_summary("Toggle a mode that hides the status bars, "
+                          "breadcrumb bar, and hints so that the log view "
+                          "can use as much of the screen as possible")
             .with_tags({"display"}),
     },
     {

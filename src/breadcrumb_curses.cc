@@ -59,6 +59,10 @@ breadcrumb_curses::breadcrumb_curses()
 bool
 breadcrumb_curses::do_update()
 {
+    if (!this->vc_visible) {
+        return false;
+    }
+
     if (!this->bc_line_source) {
         return false;
     }
