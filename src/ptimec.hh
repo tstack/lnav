@@ -1344,6 +1344,20 @@ ptime_z(struct exttm* dst, const char* str, off_t& off_inout, ssize_t len)
             return false;
         }
 
+        for (const auto index : {1, 2, 3 + skip_colon, 4 + skip_colon}) {
+            if (str[off_inout + index] < '0'
+                || str[off_inout + index] > '9')
+            {
+                return false;
+            }
+        }
+        if (str[off_inout + 1] > '2'
+            || (str[off_inout + 1] == '2' && str[off_inout + 2] > '3')
+            || str[off_inout + skip_colon + 3] > '5')
+        {
+            return false;
+        }
+
         hours
             = ((str[off_inout + 1] - '0') * 10 + (str[off_inout + 2] - '0') * 1)
             * 60 * 60;
