@@ -234,6 +234,18 @@ accidentally closing the prompt when closing a completion popup.
     `bracketed paste <https://en.wikipedia.org/wiki/Bracketed-paste>`_
     mode.
 
+.. _ui_max_log_space:
+
+Maximum Log Space
+-----------------
+
+Press :kbd:`Ctrl` + :kbd:`k` to toggle a mode that hides everything except
+the log content, so that the log view can use as much of the screen as
+possible.  The breadcrumb bar is shown only while it has focus.  The
+configuration panel can still be opened with :kbd:`Tab`, and the prompt
+appears when needed.  The same toggle is available through the
+:ref:`toggle_max_log_space` command.
+
 .. _ui_views:
 
 Views

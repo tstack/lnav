@@ -389,6 +389,8 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
                 line instead of keeping it fixed at the top of the
                 current screen.                                   
 [1m F2             Toggle mouse support.                             [0m
+[1m Ctrl-K         Toggle maximum log space mode, which hides        [0m
+[1m                everything except the log content.                [0m
 
 [4mQuery[0m
 
