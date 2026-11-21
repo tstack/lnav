@@ -48,6 +48,16 @@ namespace lnav::stmt_stats {
 bool step(std::chrono::steady_clock::time_point deadline);
 
 /**
+ * For headless mode, which has no main loop to call step(): when a file has
+ * messages without levels of their own, waits for log2src's scan and maps
+ * them now, so they get the levels of their statements.
+ *
+ * @return True if the levels of lines in the log view changed, so the view
+ *   has to be refiltered.
+ */
+bool map_levels_headless();
+
+/**
  * Creates the log_stack_frame_rows() table-valued function: the LOG view rows
  * of the messages with a stack frame at a source location, from the same map.
  */

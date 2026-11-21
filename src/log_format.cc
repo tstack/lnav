@@ -5723,14 +5723,26 @@ external_log_format::build(std::vector<lnav::console::user_message>& errors)
 
         this->elf_pattern_order.push_back(elf_pattern.second);
     }
-    if (this->lf_file_type == file_type_t::JSON) {
-        this->lf_has_body = !this->elf_body_field.empty();
-    } else {
+    if (this->lf_file_type == file_type_t::TEXT) {
         this->lf_has_body = std::any_of(
             this->elf_pattern_order.begin(),
             this->elf_pattern_order.end(),
             [](const auto& pat) { return pat->p_body_field_index != -1; });
+        this->lf_has_level = std::all_of(
+            this->elf_pattern_order.begin(),
+            this->elf_pattern_order.end(),
+            [](const auto& pat) { return pat->p_level_field_index != -1; });
+    } else {
+        // A JSON or tabular format has no patterns: its fields are found by
+        // name.
+        if (this->lf_file_type == file_type_t::JSON) {
+            this->lf_has_body = !this->elf_body_field.empty();
+        }
+        this->lf_has_level = !this->elf_level_field.empty();
     }
+    // What scan_str() gives a message without a level capture.
+    this->lf_default_level
+        = this->convert_level(string_fragment::invalid(), nullptr);
     if (this->lf_file_type == file_type_t::TEXT
         && !this->elf_src_file_field.empty() && src_file_found == 0)
     {
@@ -6902,6 +6914,29 @@ external_log_format::get_pattern_name(const pattern_locks& pl,
     }
     auto pat_index = pl.pattern_index_for_line(line_number);
     return this->elf_pattern_order[pat_index]->p_name;
+}
+
+bool
+log_format::has_level_for_line(const pattern_locks& pl,
+                               uint64_t line_number) const
+{
+    if (this->lf_has_level) {
+        return true;
+    }
+    auto pat_index = pl.pattern_index_for_line(line_number);
+    if (pat_index < 0) {
+        return false;
+    }
+    return this->pattern_has_level(pat_index);
+}
+
+bool
+external_log_format::pattern_has_level(int pat_index) const
+{
+    if (this->lf_has_level || this->lf_file_type != file_type_t::TEXT) {
+        return this->lf_has_level;
+    }
+    return this->elf_pattern_order[pat_index]->p_level_field_index != -1;
 }
 
 std::string

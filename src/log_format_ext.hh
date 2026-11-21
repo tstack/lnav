@@ -340,6 +340,8 @@ public:
     std::string get_pattern_regex(const pattern_locks& pl,
                                   uint64_t line_number) const override;
 
+    bool pattern_has_level(int pat_index) const override;
+
     log_level_t convert_level(string_fragment str,
                               scan_batch_context* sbc) const;
 

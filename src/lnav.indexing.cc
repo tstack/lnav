@@ -37,6 +37,7 @@
 #include "lnav.events.hh"
 #include "lnav.exec-phase.hh"
 #include "lnav.hh"
+#include "log_stmt_stats.hh"
 #include "service_tags.hh"
 #include "session_data.hh"
 #include "sql_util.hh"
@@ -672,6 +673,13 @@ rebuild_indexes_repeatedly()
             break;
         }
         log_info("continuing to rebuild indexes...");
+    }
+
+    if (lnav_data.ld_flags.is_set<lnav_flags::headless>()
+        && lnav::stmt_stats::map_levels_headless())
+    {
+        // Refilters the log view for the new levels.
+        rebuild_indexes();
     }
 
     // A watch that matched during the scan handed the line to the main loop

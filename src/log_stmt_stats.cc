@@ -336,8 +336,25 @@ struct frame_query {
 };
 
 struct stmt_map {
-    /** Set by the first query of the summary table. */
+    /**
+     * Set by the first query of the summary table, or by step() once there's
+     * a file with messages without levels, see wants_levels().
+     */
     bool sm_active{false};
+    /**
+     * Set while the map was only started by step(), for the levels: then
+     * only the files with messages without levels are mapped, see
+     * in_scope().
+     * Cleared by start_map(), once something asks for the statements.
+     */
+    bool sm_levels_only{false};
+    /**
+     * The log2src scan that wants_levels() last asked about, and whether it
+     * found any statements, so the matcher is only asked again after the
+     * source changes.  Only used by step(), on the main thread.
+     */
+    std::optional<size_t> sm_levels_checked_version;
+    bool sm_levels_have_statements{false};
     // Statements are only ever appended: none is removed, and a statement's
     // s_src and s_schema never change once it's interned, so they last as
     // long as lnav.  all_logs and log_stmt_stats hand them to SQLite without
@@ -377,6 +394,22 @@ struct stmt_map {
      * appended lines or after a re-scan, aren't logged.
      */
     bool sm_pass_logged{false};
+
+    /**
+     * Set when lines got the level of their statement (see
+     * logfile::apply_stmt_level()), but the log view hasn't been told yet.
+     * Its index has a copy of each message's level, for the error and
+     * warning marks, and the minimum level filter has to be run again (see
+     * logfile_sub_source::set_levels_changed()).  That goes over the whole
+     * index, so it's done at most once every LEVEL_REBUILD_INTERVAL while the
+     * pass goes on, and once at the end.  Only used by step(), on the main
+     * thread.
+     */
+    bool sm_levels_pending{false};
+    /** Counts the times the log view was told, for map_levels_headless(). */
+    size_t sm_level_updates{0};
+    std::chrono::steady_clock::time_point sm_last_level_rebuild;
+    static constexpr auto LEVEL_REBUILD_INTERVAL = std::chrono::seconds(2);
 
     /**
      * The stack frames found in multi-line messages, by id.  Like the
@@ -786,6 +819,11 @@ struct stmt_map {
         std::string ms_frame_path;
         /** The frames found in the current message. */
         std::vector<frame_id> ms_frames;
+        /**
+         * The level of the statement match_line() found, for a message
+         * without a level of its own, or LEVEL_UNKNOWN.
+         */
+        log_level_t ms_level{LEVEL_UNKNOWN};
         map_counters ms_counters;
     };
 
@@ -932,6 +970,7 @@ struct stmt_map {
         auto& mc = ms.ms_counters;
         mc.mc_lines += 1;
         ms.ms_frames.clear();
+        ms.ms_level = LEVEL_UNKNOWN;
         auto ll = lf->begin() + line_number;
         if (ll->is_continued()) {
             mc.mc_continued += 1;
@@ -994,15 +1033,23 @@ struct stmt_map {
         }
 
 #ifdef HAVE_RUST_DEPS
+        // The same hint all_logs gives, so they find the same statement.
+        const auto msg_level = all_logs_vtab::level_hint(*lf, ll);
         const auto find_start = std::chrono::steady_clock::now();
-        auto find_res = all_logs_vtab::find_statement(
-            sbr, sa, values, ll->get_msg_level(), false);
+        auto find_res
+            = all_logs_vtab::find_statement(sbr, sa, values, msg_level, false);
         const auto find_ns = ns_since(find_start);
         mc.mc_find_calls += 1;
         mc.mc_find_ns += find_ns;
         mc.mc_max_find_ns = std::max(mc.mc_max_find_ns, find_ns);
         if (find_res != nullptr) {
             mc.mc_statements += 1;
+            if (!lf->msg_has_level(line_number)
+                && find_res->level != lnav_rs_ext::StmtLevel::unknown)
+            {
+                ms.ms_level = all_logs_vtab::from_stmt_level(find_res->level);
+                mc.mc_stmt_levels += 1;
+            }
             uint32_t id;
             {
                 scoped_ns timer(mc.mc_intern_ns);
@@ -1019,7 +1066,7 @@ struct stmt_map {
                                          ""_frag,
                                          &mc.mc_shared_interns);
             }
-            this->sample_vars(id, sbr, sa, values, ll->get_msg_level(), ms);
+            this->sample_vars(id, sbr, sa, values, msg_level, ms);
             return id;
         }
 #endif
@@ -1101,9 +1148,11 @@ struct stmt_map {
             (unsigned long long) mc.mc_frames_only,
             (unsigned long long) mc.mc_no_body);
         log_info(
-            "stmt map pass:   mapped to: %llu statements, %llu source "
-            "locations, %llu message formats",
+            "stmt map pass:   mapped to: %llu statements (%llu with a level "
+            "for a format without one), %llu source locations, %llu message "
+            "formats",
             (unsigned long long) mc.mc_statements,
+            (unsigned long long) mc.mc_stmt_levels,
             (unsigned long long) mc.mc_src_locations,
             (unsigned long long) mc.mc_messages);
         log_info(
@@ -1203,8 +1252,11 @@ void
 start_map()
 {
     auto& sm = get_map();
-    if (!sm.sm_active) {
+    if (!sm.sm_active || sm.sm_levels_only) {
         sm.sm_active = true;
+        sm.sm_levels_only = false;
+        // The other files are mapped now too, so there's another pass.
+        sm.sm_pass_logged = false;
         log_info("starting the statement map");
     }
 }
@@ -1860,7 +1912,9 @@ schema_lines(const std::vector<std::string>& schemas,
     const auto all_unknown = [&]() {
         unknown_out.insert(unknown_out.end(), schemas.begin(), schemas.end());
     };
-    if (!sm.sm_active) {
+    // While only the files without levels are mapped, the rest would all
+    // look like they have no statement.
+    if (!sm.sm_active || sm.sm_levels_only) {
         all_unknown();
         return;
     }
@@ -2338,15 +2392,111 @@ static const auto REGISTER_SCHEMA_LINES = []() {
 
 namespace lnav::stmt_stats {
 
+/**
+ * Checks if the map should start without being asked, so messages without
+ * levels of their own, like plain dmesg lines, get the levels of their
+ * statements (see logfile::apply_stmt_level()).  That's when a file with
+ * such messages is open and log2src has found statements in the source
+ * paths.
+ */
+static bool
+wants_levels(stmt_map& sm, logfile_sub_source& lss)
+{
+    auto has_file = false;
+    for (const auto& ld : lss) {
+        const auto* lf = ld->get_file_ptr();
+        if (lf == nullptr) {
+            continue;
+        }
+        const auto* format = lf->get_format_ptr();
+        if (format != nullptr && format->lf_has_body && lf->may_lack_levels())
+        {
+            has_file = true;
+            break;
+        }
+    }
+    if (!has_file) {
+        return false;
+    }
+
+#ifdef HAVE_RUST_DEPS
+    // Asking for the languages takes the matcher, which a scan holds for as
+    // long as it runs, so wait for the scan, and only ask once per scan.
+    auto ext = lnav_rs_ext::get_status();
+    if (ext.status == lnav_rs_ext::Status::working) {
+        return false;
+    }
+    if (sm.sm_levels_checked_version != ext.version) {
+        sm.sm_levels_checked_version = ext.version;
+        sm.sm_levels_have_statements
+            = !lnav_rs_ext::source_languages().empty();
+    }
+    return sm.sm_levels_have_statements;
+#else
+    return false;
+#endif
+}
+
+/**
+ * Whether the file is mapped now: all of them, unless the map was only
+ * started for the levels of the messages without them.
+ */
+static bool
+in_scope(const stmt_map& sm, const logfile* lf)
+{
+    if (!sm.sm_levels_only) {
+        return true;
+    }
+    return lf->may_lack_levels();
+}
+
+bool
+map_levels_headless()
+{
+    auto& sm = get_map();
+    auto& lss = lnav_data.ld_log_source;
+    // A full map is driven by the queries that want it.
+    if (sm.sm_active && !sm.sm_levels_only) {
+        return false;
+    }
+    auto has_file = false;
+    for (const auto& ld : lss) {
+        const auto* lf = ld->get_file_ptr();
+        if (lf != nullptr && lf->get_format_ptr() != nullptr
+            && lf->get_format_ptr()->lf_has_body && lf->may_lack_levels())
+        {
+            has_file = true;
+            break;
+        }
+    }
+    if (!has_file) {
+        return false;
+    }
+
+    // wants_levels() doesn't look at the statements while log2src is
+    // scanning the source, so wait for the scan, as the queries do.
+    lnav::progress_tracker::instance().wait_for_completion(
+        &lnav_data.ld_status_refresher);
+    const auto before = sm.sm_level_updates;
+    step(std::chrono::steady_clock::time_point::max());
+    return sm.sm_level_updates != before;
+}
+
 bool
 step(std::chrono::steady_clock::time_point deadline)
 {
     auto& sm = get_map();
+    auto& lss = lnav_data.ld_log_source;
     if (!sm.sm_active) {
-        return false;
+        if (!wants_levels(sm, lss)) {
+            return false;
+        }
+        log_info("starting the statement map for the levels of a format "
+                 "without them");
+        sm.sm_active = true;
+        sm.sm_levels_only = true;
     }
 
-    auto& lss = lnav_data.ld_log_source;
     auto languages_changed = false;
 
 #ifdef HAVE_RUST_DEPS
@@ -2435,7 +2585,7 @@ step(std::chrono::steady_clock::time_point deadline)
     std::vector<logfile*> work;
     for (const auto& ld : lss) {
         auto* lf = ld->get_file_ptr();
-        if (lf == nullptr) {
+        if (lf == nullptr || !in_scope(sm, lf)) {
             continue;
         }
         auto& si = lf->get_stmt_ids();
@@ -2480,6 +2630,8 @@ step(std::chrono::steady_clock::time_point deadline)
     std::vector<char> remapped(work.size(), 0);
     // Whether a worker looked at any line's frames, found or not.
     std::vector<char> frames_checked(work.size(), 0);
+    // Whether a worker changed the level of any line to its statement's.
+    std::vector<char> levels_changed(work.size(), 0);
     // Whether this slice has mapped anything yet: past the deadline, a worker
     // only starts another file while nothing has been.
     std::atomic<bool> progressed{false};
@@ -2546,6 +2698,11 @@ step(std::chrono::steady_clock::time_point deadline)
                             remapped[index] = 1;
                         }
                     }
+                    // Only this worker has the file during the slice, so its
+                    // lines can be changed here.
+                    if (lf->apply_stmt_level(line, ms.ms_level)) {
+                        levels_changed[index] = 1;
+                    }
                     si.si_verified += 1;
                 }
                 if (want_frames) {
@@ -2593,11 +2750,30 @@ step(std::chrono::steady_clock::time_point deadline)
     {
         sm.sm_frame_changes += 1;
     }
+    if (std::find(levels_changed.begin(), levels_changed.end(), 1)
+        != levels_changed.end())
+    {
+        sm.sm_levels_pending = true;
+    }
+    if (sm.sm_levels_pending) {
+        const auto now = std::chrono::steady_clock::now();
+        if (!more
+            || now - sm.sm_last_level_rebuild
+                >= stmt_map::LEVEL_REBUILD_INTERVAL)
+        {
+            log_info("stmt map: updating the log index for the levels of "
+                     "the statements");
+            sm.sm_levels_pending = false;
+            sm.sm_last_level_rebuild = now;
+            sm.sm_level_updates += 1;
+            lss.set_levels_changed();
+        }
+    }
     size_t completed = 0;
     size_t total = 0;
     for (const auto& ld : lss) {
         const auto* lf = ld->get_file_ptr();
-        if (lf != nullptr) {
+        if (lf != nullptr && in_scope(sm, lf)) {
             const auto& si = lf->get_stmt_ids();
             completed += std::min(si.si_verified, si.si_frames_verified);
             total += si.si_ids.size();

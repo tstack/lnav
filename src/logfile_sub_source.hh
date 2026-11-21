@@ -242,6 +242,20 @@ public:
     bool is_rebuild_forced() const { return this->lss_force_rebuild; }
 
     /**
+     * Called when the levels of lines already in the index have changed,
+     * see logfile::apply_stmt_level().  The index's copy of each line's
+     * level, for the error and warning marks, is updated and the lines are
+     * filtered again for the minimum level, without merging the files
+     * again.  That's done by the next apply_pending_mark_refilter(), so it
+     * isn't in the middle of a query that's reading the index.
+     */
+    void set_levels_changed()
+    {
+        this->lss_levels_changed = true;
+        this->tss_mark_refilter_pending = true;
+    }
+
+    /**
      * While set, rebuild_index() indexes the files but does not merge their
      * lines into the combined index.
      */
@@ -1192,6 +1206,8 @@ private:
     size_t lss_filename_width = 0;
     line_context_t lss_line_context{line_context_t::none};
     bool lss_force_rebuild{false};
+    /** Set by set_levels_changed(), cleared by text_filters_changed(). */
+    bool lss_levels_changed{false};
     bool lss_merge_deferred{false};
     std::vector<std::unique_ptr<logfile_data>> lss_files;
     unsigned int lss_all_timestamp_flags{0};

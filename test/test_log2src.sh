@@ -719,3 +719,37 @@ run_cap_test ${lnav_test} -n \
     -c "${HIDE_ID}" \
     -c ":write-csv-to -" \
     tail-stmt-src/java-example.0
+
+# a log without levels, like dmesg's, gets the level of the statement that
+# each message came from, unless the statement is too generic to say
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/c" \
+    -c ";SELECT count(*) AS stmts FROM log_stmt_stats" \
+    -c ";SELECT log_line, log_level, log_body FROM all_logs" \
+    -c ":write-csv-to -" \
+    -c ":set-min-log-level warning" \
+    -c ";SELECT inner_height AS rows_at_warning FROM lnav_views WHERE name = 'log'" \
+    -c ":write-csv-to -" \
+    ${test_dir}/log2src/c/dmesg.0
+
+# with 'dmesg --decode', a message has a level of its own, so only the
+# lines without one get the level of their statement
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/c" \
+    -c ";SELECT count(*) AS stmts FROM log_stmt_stats" \
+    -c ";SELECT log_line, log_level, facility, log_body FROM dmesg_log" \
+    -c ":write-csv-to -" \
+    ${test_dir}/log2src/c/dmesg_decoded.0
+
+# without a query of the statements, the map is started for just the files
+# with messages without levels, and a query of the statements maps the rest
+run_cap_test ${lnav_test} -n \
+    -c ":add-source-path ${test_dir}/log2src/c" \
+    -c ";SELECT log_line, log_level, log_body FROM all_logs" \
+    -c ":write-csv-to -" \
+    -c ":set-min-log-level warning" \
+    -c ";SELECT inner_height AS rows_at_warning FROM lnav_views WHERE name = 'log'" \
+    -c ":write-csv-to -" \
+    -c ";SELECT count(*) AS stmts FROM log_stmt_stats" \
+    -c ":write-csv-to -" \
+    ${test_dir}/log2src/c/dmesg.0

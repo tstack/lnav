@@ -208,6 +208,11 @@ mod ffi {
         pub src: String,
         pub pattern: String,
         pub variables: String,
+        /// The statement's level, when it explains enough of the message to
+        /// be good evidence for the message's level, or `unknown`, like for
+        /// a statement that is almost all placeholders, such as `"%s: %s"`,
+        /// or a `printf()`.  For a log without levels, like dmesg's.
+        pub level: StmtLevel,
     }
 
     struct VarPair {
@@ -810,25 +815,34 @@ fn match_log_statement_json(
         .with_body(Some(body))
         .build(body);
 
-    if let Some(LogMapping {
-        variables,
-        src_ref: Some(src_ref),
-        ..
-    }) = log_matcher.match_log_statement(
+    let Some(mapping) = log_matcher.match_log_statement(
         &log_ref,
         &LogMatchOptions {
             extract_variables: options.extract_variables,
             fallback: options.fallback,
         },
-    ) {
-        UniquePtr::new(FindLogResultJson {
-            src: SourceDetailsBorrowed::from(&src_ref).to_json(),
-            pattern: src_ref.pattern_source().into_owned(),
-            variables: serde_json::to_string(&variables).unwrap(),
-        })
-    } else {
-        UniquePtr::null()
-    }
+    ) else {
+        return UniquePtr::null();
+    };
+    let explains_message = mapping.explains_message();
+    let LogMapping {
+        variables,
+        src_ref: Some(src_ref),
+        ..
+    } = mapping
+    else {
+        return UniquePtr::null();
+    };
+    UniquePtr::new(FindLogResultJson {
+        src: SourceDetailsBorrowed::from(&src_ref).to_json(),
+        pattern: src_ref.pattern_source().into_owned(),
+        variables: serde_json::to_string(&variables).unwrap(),
+        level: if explains_message {
+            src_ref.level.into()
+        } else {
+            StmtLevel::unknown
+        },
+    })
 }
 
 fn start_ext_access(port: u16, api_key: String) -> StartExtResult {

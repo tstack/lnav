@@ -1,0 +1,6 @@
+kern  :info  : [    1.000000] Linux version 6.1.0
+kern  :info  : [    1.100000] usb 1-1: failed to enable device: -71
+kern  :warn  : [    1.200000] ata1: link is slow to respond, please be patient
+[    1.300000] drv 0000:00:1f.2: registered as drv3
+[    1.350000] usb 1-1: failed to enable device: -71
+daemon:notice: [    1.400000] systemd[1]: Started Journal Service.

@@ -2920,6 +2920,20 @@ logfile_sub_source::text_filters_changed()
         return;
     }
 
+    if (std::exchange(this->lss_levels_changed, false)) {
+        log_debug("updating the levels in the index");
+        for (auto& ic : this->lss_index) {
+            uint64_t line_number;
+            auto ld = this->find_data(ic.value(), line_number);
+            const auto* lf = (*ld)->get_file_ptr();
+            if (lf == nullptr) {
+                continue;
+            }
+            ic.ic_level = lnav::enums::to_underlying(
+                indexed_content::level_from_log(lf->begin() + line_number));
+        }
+    }
+
     auto& vis_bm = this->tss_view->get_bookmarks();
     uint32_t filtered_in_mask, filtered_out_mask;
 
@@ -3849,7 +3863,7 @@ logfile_sub_source::apply_pending_mark_refilter()
         return false;
     }
 
-    log_debug("marks were removed, refiltering");
+    log_debug("marks were removed or levels changed, refiltering");
     std::optional<row_info> sel_ri;
     auto sel = this->tss_view->get_selection();
     if (sel) {

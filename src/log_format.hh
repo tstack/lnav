@@ -472,6 +472,23 @@ public:
         return "";
     }
 
+    /**
+     * Whether the message at the line can have a level of its own: for a
+     * text format, if the pattern it matched captures the level-field.
+     * See lf_has_level.
+     */
+    bool has_level_for_line(const pattern_locks& pl,
+                            uint64_t line_number) const;
+
+    /**
+     * Whether a message that matched the pattern, by its index in the
+     * pattern locks, can have a level of its own.
+     */
+    virtual bool pattern_has_level(int pat_index) const
+    {
+        return this->lf_has_level;
+    }
+
     // The number of parsed-value columns a row of this format
     // produces.  Default defers to `get_value_metadata()` (and eats
     // the vector copy); formats that know the count cheaply — e.g.
@@ -661,6 +678,23 @@ public:
      * or to parse for a message format.
      */
     bool lf_has_body{false};
+    /**
+     * Whether every message of the format can have a level of their own,
+     * from a level field.  A message without one, like a plain dmesg line,
+     * gets the default level, so the level of the log statement that it
+     * came from is the better guess, see logfile::apply_stmt_level().  A
+     * text format has one if all of its patterns capture the level-field
+     * (has_level_for_line() says for a particular message), a JSON or
+     * tabular format if it names a level-field.
+     */
+    bool lf_has_level{true};
+    /**
+     * The level of a message without a level of its own (see
+     * has_level_for_line()).  Their levels
+     * are set back to this when their log statement no longer says, see
+     * logfile::apply_stmt_level().
+     */
+    log_level_t lf_default_level{LEVEL_INFO};
     std::optional<uint64_t> lf_max_unrecognized_lines;
     std::map<const intern_string_t, std::shared_ptr<format_tag_def>>
         lf_tag_defs;

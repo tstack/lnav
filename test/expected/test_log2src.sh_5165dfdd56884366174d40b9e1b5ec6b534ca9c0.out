@@ -1,0 +1,8 @@
+log_line,log_level,log_body
+0,info,Linux version 6.1.0
+1,error,usb 1-1: failed to enable device: -71
+2,warning,"ata1: link is slow to respond, please be patient"
+3,info,drv 0000:00:1f.2: registered as drv3
+4,info,ACPI: Power Resource [C230] (off)
+rows_at_warning
+2

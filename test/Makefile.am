@@ -341,6 +341,9 @@ dist_noinst_DATA = \
 	listview_output_cursor.5 \
 	listview_output_cursor.6 \
 	log.clog \
+	log2src/c/dmesg.0 \
+	log2src/c/dmesg_decoded.0 \
+	log2src/c/drv.c \
 	log2src/go/cmd/server/main.go \
 	log2src/java/com/example/net/Meter.java \
 	log2src/java/com/example/net/Server.java \

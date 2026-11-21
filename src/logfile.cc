@@ -362,6 +362,7 @@ logfile::stmt_ids::counters::merge(const counters& rhs)
     this->mc_sample_ns += rhs.mc_sample_ns;
     this->mc_samples += rhs.mc_samples;
     this->mc_statements += rhs.mc_statements;
+    this->mc_stmt_levels += rhs.mc_stmt_levels;
     this->mc_src_locations += rhs.mc_src_locations;
     this->mc_messages += rhs.mc_messages;
     this->mc_parse_ns += rhs.mc_parse_ns;
@@ -445,6 +446,66 @@ logfile::stmt_ids::discard_front(size_t count)
     count = std::min(count, this->si_ids.size());
     this->si_ids.erase(this->si_ids.begin(), this->si_ids.begin() + count);
     this->si_verified -= std::min(this->si_verified, count);
+}
+
+bool
+logfile::msg_has_level(size_t line) const
+{
+    const auto* format = this->lf_format.get();
+    if (format == nullptr) {
+        return true;
+    }
+    return format->has_level_for_line(this->lf_pattern_locks, line);
+}
+
+bool
+logfile::may_lack_levels() const
+{
+    const auto* format = this->lf_format.get();
+    if (format == nullptr || format->lf_has_level) {
+        return false;
+    }
+    return std::any_of(this->lf_pattern_locks.pl_lines.begin(),
+                       this->lf_pattern_locks.pl_lines.end(),
+                       [format](const auto& pfl) {
+                           return !format->pattern_has_level(pfl.pfl_pat_index);
+                       });
+}
+
+bool
+logfile::apply_stmt_level(size_t line, log_level_t stmt_level)
+{
+    const auto* format = this->lf_format.get();
+    if (format == nullptr || line >= this->lf_index.size()
+        || this->msg_has_level(line))
+    {
+        return false;
+    }
+
+    auto& ll = this->lf_index[line];
+    // Only a message's level comes from the format, an invalid line stays
+    // invalid.
+    if (!ll.is_message() || ll.get_msg_level() == LEVEL_INVALID) {
+        return false;
+    }
+
+    const auto new_level = stmt_level == LEVEL_UNKNOWN
+        ? format->lf_default_level
+        : stmt_level;
+    const auto old_level = ll.get_msg_level();
+    if (old_level == new_level) {
+        return false;
+    }
+    this->lf_level_stats.update_msg_count(old_level, -1);
+    this->lf_level_stats.update_msg_count(new_level);
+    ll.set_level(new_level);
+    for (auto next = line + 1;
+         next < this->lf_index.size() && this->lf_index[next].is_continued();
+         next++)
+    {
+        this->lf_index[next].set_level(new_level);
+    }
+    return true;
 }
 
 std::vector<logfile::stmt_ids::frame_line>::const_iterator
@@ -1878,13 +1939,10 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 this->lf_format->lf_timestamp_flags
                     = best_timestamp_flags.value();
             }
+            // The line that matched is counted below, like every other
+            // match, and the lines before it become headers or invalid
+            // lines, which aren't counted.
             this->lf_level_stats = {};
-            for (const auto& ll : this->lf_index) {
-                if (!ll.is_message()) {
-                    continue;
-                }
-                this->lf_level_stats.update_msg_count(ll.get_msg_level());
-            }
             this->lf_format_match = winner.second;
             this->set_base_time_for(sbc, li);
             if (this->lf_time_scanner.dts_fmt_lock != -1) {
@@ -2308,6 +2366,22 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
              * Drop the last line we read since it might have been a partial
              * read.
              */
+            {
+                // A message that's scanned again gets the format's level, so
+                // the level it got from its statement is taken out of the
+                // level stats first, which are kept for the rescan (or the
+                // line wasn't counted, if it was partial).  The map gives it
+                // its statement's level again.
+                auto first_dropped = this->lf_index.size() - 1;
+                while (first_dropped > 0
+                       && this->lf_index[first_dropped].is_sub_line())
+                {
+                    first_dropped -= 1;
+                }
+                if (!this->lf_index[first_dropped].is_continued()) {
+                    this->apply_stmt_level(first_dropped, LEVEL_UNKNOWN);
+                }
+            }
             while (this->lf_index.back().is_sub_line()) {
                 this->lf_index.pop_back();
                 rollback_size += 1;

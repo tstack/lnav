@@ -378,7 +378,7 @@ all_logs_vtab::extract(const log_cursor::extract_context& ec,
         : find_statement(line,
                          sa,
                          sub_values,
-                         lf->begin()[line_number].get_msg_level(),
+                         level_hint(*lf, lf->begin() + line_number),
                          ec.is_column_used(this->alv_values_meta));
     if (find_res != nullptr) {
         char schema_buf[hasher::STRING_SIZE];
@@ -506,7 +506,7 @@ all_logs_vtab::statement_at(logfile& lf,
     lf.get_format_ptr()->annotate(&lf, line_number, sa, values);
     auto busy = false;
     auto find_res
-        = find_statement(sbr, sa, values, ll->get_msg_level(), false, &busy);
+        = find_statement(sbr, sa, values, level_hint(lf, ll), false, &busy);
     if (busy) {
         return stmt_lookup_busy{};
     }
@@ -524,6 +524,15 @@ all_logs_vtab::statement_at(logfile& lf,
 #else
     return stmt_lookup_none{};
 #endif
+}
+
+log_level_t
+all_logs_vtab::level_hint(const logfile& lf, logfile::const_iterator ll)
+{
+    if (!lf.msg_has_level(std::distance(lf.begin(), ll))) {
+        return LEVEL_UNKNOWN;
+    }
+    return ll->get_msg_level();
 }
 
 #ifdef HAVE_RUST_DEPS

@@ -964,6 +964,11 @@ struct FindLogResultJson final {
   ::rust::String src;
   ::rust::String pattern;
   ::rust::String variables;
+  // The statement's level, when it explains enough of the message to
+  // be good evidence for the message's level, or `unknown`, like for
+  // a statement that is almost all placeholders, such as `"%s: %s"`,
+  // or a `printf()`.  For a log without levels, like dmesg's.
+  ::lnav_rs_ext::StmtLevel level;
 
   using IsRelocatable = ::std::true_type;
 };

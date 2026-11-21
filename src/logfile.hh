@@ -51,6 +51,7 @@
 #include "ArenaAlloc/arenaalloc.h"
 #include "base/auto_fd.hh"
 #include "base/auto_mem.hh"
+#include "base/log_level_enum.hh"
 #include "base/lnav_log.hh"
 #include "base/map_util.hh"
 #include "base/progress.hh"
@@ -396,6 +397,11 @@ public:
 
             /** What the messages were mapped to. */
             uint64_t mc_statements{0};
+            /**
+             * The statements whose level was used for a message without
+             * a level, see logfile::apply_stmt_level().
+             */
+            uint64_t mc_stmt_levels{0};
             uint64_t mc_src_locations{0};
             uint64_t mc_messages{0};
             /** The data_parser for the messages without a statement. */
@@ -437,6 +443,31 @@ public:
     };
 
     stmt_ids& get_stmt_ids() { return this->lf_stmt_ids; }
+
+    /**
+     * Whether the message that starts at the line can have a level of its
+     * own, see log_format::has_level_for_line().
+     */
+    bool msg_has_level(size_t line) const;
+
+    /**
+     * Whether any of the file's messages matched a pattern that doesn't
+     * capture a level, so they can get the levels of their statements.
+     */
+    bool may_lack_levels() const;
+
+    /**
+     * For a message without a level of its own (see msg_has_level()),
+     * give the message that starts at the line the level of the log
+     * statement it came from, or the format's default level if that's
+     * LEVEL_UNKNOWN, like for a line that no statement explains well enough.
+     * Every such message has the default level until it's given its
+     * statement's, so no other state is needed to put it back.
+     * The message's continued lines get the same level, like they do when
+     * they're indexed, and the file's level stats are kept up to date.
+     * Returns true if the level changed.
+     */
+    bool apply_stmt_level(size_t line, log_level_t stmt_level);
 
     const stmt_ids& get_stmt_ids() const { return this->lf_stmt_ids; }
 

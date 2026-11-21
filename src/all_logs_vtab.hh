@@ -195,6 +195,16 @@ public:
     static stmt_lookup statement_src_at(logfile& lf,
                                         logfile::const_iterator ll);
 
+    /**
+     * The level to give find_statement() for a message: its own, or
+     * LEVEL_UNKNOWN for a message without a level of its own (see
+     * logfile::msg_has_level()).  Such a message has either the format's
+     * default level or the level the statement map took from its
+     * statement, and neither says which statement it came from.
+     */
+    static log_level_t level_hint(const logfile& lf,
+                                  logfile::const_iterator ll);
+
 #ifdef HAVE_RUST_DEPS
     /**
      * Finds the source statement that logged a message, or nullptr.  The
