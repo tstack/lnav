@@ -127,6 +127,35 @@ to_rfc3339_string(std::chrono::microseconds micros, char sep)
     return buf;
 }
 
+std::string
+to_rfc3339_zoned_string(std::chrono::microseconds micros, char sep)
+{
+    auto retval = to_rfc3339_string(micros, sep);
+    const auto local_secs = date::local_seconds{
+        std::chrono::floor<std::chrono::seconds>(micros)};
+    const auto offset_mins = std::chrono::duration_cast<std::chrono::minutes>(
+                                 local_secs.time_since_epoch()
+                                 - to_sys_time(local_secs).time_since_epoch())
+                                 .count();
+
+    if (offset_mins == 0) {
+        retval.push_back('Z');
+    } else {
+        const auto abs_mins = offset_mins < 0 ? -offset_mins : offset_mins;
+        char buf[16];
+
+        snprintf(buf,
+                 sizeof(buf),
+                 "%c%02d:%02d",
+                 offset_mins < 0 ? '-' : '+',
+                 (int) (abs_mins / 60),
+                 (int) (abs_mins % 60));
+        retval.append(buf);
+    }
+
+    return retval;
+}
+
 static std::optional<Posix::time_zone>
 get_posix_zone(const char* name)
 {

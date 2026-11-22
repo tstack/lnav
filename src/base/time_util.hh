@@ -83,6 +83,14 @@ to_rfc3339_string(timeval tv, char sep = ' ')
     return to_rfc3339_string(to_us(tv), sep);
 }
 
+/**
+ * Format a time that is in lnav's local-time representation as an RFC 3339
+ * timestamp that includes the UTC offset of the current time zone, so that
+ * the result refers to the same instant when it is parsed in another zone.
+ */
+std::string to_rfc3339_zoned_string(std::chrono::microseconds micros,
+                                    char sep = ' ');
+
 date::sys_info sys_time_to_info(date::sys_seconds secs);
 
 date::local_info local_time_to_info(date::local_seconds secs);

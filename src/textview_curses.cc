@@ -175,12 +175,14 @@ text_time_translator::add_time_commands_for_session(
 {
     auto min_time_opt = this->get_min_row_time();
     if (min_time_opt) {
-        auto min_time_str = lnav::to_rfc3339_string(min_time_opt.value(), 'T');
+        auto min_time_str = lnav::to_rfc3339_zoned_string(min_time_opt.value(),
+                                                         'T');
         receiver(fmt::format(FMT_STRING("hide-lines-before {}"), min_time_str));
     }
     auto max_time_opt = this->get_max_row_time();
     if (max_time_opt) {
-        auto max_time_str = lnav::to_rfc3339_string(max_time_opt.value(), 'T');
+        auto max_time_str = lnav::to_rfc3339_zoned_string(max_time_opt.value(),
+                                                         'T');
         receiver(fmt::format(FMT_STRING("hide-lines-after {}"), max_time_str));
     }
 }

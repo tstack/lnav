@@ -648,3 +648,31 @@ run_cap_test ${lnav_test} -n \
     -c ':load-session' \
     -c ':goto 0' \
     ${test_dir}/textfile_plain.0
+
+# time filters are saved with their UTC offset, so a session restored in
+# another time zone hides the same lines
+export TZ=America/Los_Angeles
+run_cap_test ${lnav_test} -nq \
+    -c ':hide-lines-before 2026-11-17T06:00:03Z' \
+    -c ':hide-lines-after 2026-11-17T06:00:07Z' \
+    -c ':export-session-to exported-zoned-session.0.lnav' \
+    ${test_dir}/logfile_metrics_interleaved.0
+
+run_cap_test grep hide-lines exported-zoned-session.0.lnav
+
+export TZ=UTC
+run_cap_test ${lnav_test} -n \
+    -c '|exported-zoned-session.0.lnav' \
+    ${test_dir}/logfile_metrics_interleaved.0
+
+export TZ=America/Los_Angeles
+run_cap_test ${lnav_test} -nq \
+    -c ':hide-lines-before 2026-11-17T06:00:03Z' \
+    -c ':hide-lines-after 2026-11-17T06:00:07Z' \
+    -c ':save-session' \
+    ${test_dir}/logfile_metrics_interleaved.0
+
+export TZ=UTC
+run_cap_test ${lnav_test} -n \
+    -c ':load-session' \
+    ${test_dir}/logfile_metrics_interleaved.0

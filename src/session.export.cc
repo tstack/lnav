@@ -576,16 +576,19 @@ SELECT content_id, format, time_offset FROM lnav_file
         auto* tss = tc.get_sub_source();
         auto* ttt = dynamic_cast<text_time_translator*>(tss);
         if (ttt != nullptr) {
-            char tsbuf[128];
             auto min_time_opt = ttt->get_min_row_time();
             if (min_time_opt) {
-                sql_strftime(tsbuf, sizeof(tsbuf), min_time_opt.value(), 'T');
-                fmt::print(file, FMT_STRING(":hide-lines-before {}\n"), tsbuf);
+                fmt::print(file,
+                           FMT_STRING(":hide-lines-before {}\n"),
+                           lnav::to_rfc3339_zoned_string(min_time_opt.value(),
+                                                         'T'));
             }
             auto max_time_opt = ttt->get_max_row_time();
             if (max_time_opt) {
-                sql_strftime(tsbuf, sizeof(tsbuf), max_time_opt.value(), 'T');
-                fmt::print(file, FMT_STRING(":hide-lines-after {}\n"), tsbuf);
+                fmt::print(file,
+                           FMT_STRING(":hide-lines-after {}\n"),
+                           lnav::to_rfc3339_zoned_string(max_time_opt.value(),
+                                                         'T'));
             }
         }
 
