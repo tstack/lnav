@@ -368,6 +368,23 @@ log_time,log_actual_time
 2015-09-13 03:46:03.000000,2015-09-13 03:46:03.000000
 EOF
 
+cat > logfile_access_log_zoned_skew.0 <<EOF
+192.168.2.20 - - [20/Apr/2026:10:04:03 -0500] "GET /cgi-bin/try/ HTTP/1.0" 200 3395
+192.168.2.20 - - [20/Apr/2026:10:04:02 -0500] "GET /cgi-bin/try/ HTTP/1.0" 200 3395
+192.168.2.20 - - [20/Apr/2026:10:05:00 -0500] "GET /cgi-bin/try/ HTTP/1.0" 200 3395
+EOF
+run_test env TZ=America/Chicago ${lnav_test} -n \
+    -c ";select log_time,log_actual_time from access_log" \
+    -c ':write-csv-to -' \
+    logfile_access_log_zoned_skew.0
+
+check_output "log_actual_time of an out-of-order line is not in local time" <<EOF
+log_time,log_actual_time
+2026-04-20 10:04:03.000000,2026-04-20 10:04:03.000000
+2026-04-20 10:04:03.000000,2026-04-20 10:04:02.000000
+2026-04-20 10:05:00.000000,2026-04-20 10:05:00.000000
+EOF
+
 
 run_test ${lnav_test} -n \
     -c ";update access_log set log_part = 'middle' where log_line = 1" \

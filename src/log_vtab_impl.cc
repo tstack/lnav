@@ -1195,8 +1195,7 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                                     lf->get_format_ptr()
                                         ->get_timestamp_formats(),
                                     &tm,
-                                    actual_tv,
-                                    false))
+                                    actual_tv))
                             {
                                 sql_strftime(buffer, sizeof(buffer), actual_tv);
                             }
