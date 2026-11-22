@@ -36,17 +36,19 @@ Features:
 * Added a built-in `metrics_log` format that recognizes CSV
   files whose first column header is `Time`/`Timestamp`/`ts`/
   `Date...` and whose subsequent rows begin with a parseable
-  timestamp.  Each row is rendered with a timestamp and
-  a `<column>=<value>` pair for each numeric column.  Rows
-  from multiple files that have the same timestamp are
-  merged into a single line.  Values are right-aligned and
-  decorated with reverse-video bars proportional to each
-  column's observed min/max range.  When the row is
-  focused, an overlay below it labels each column with the
-  source file stem.  When metrics files are loaded along
-  with other logs, the nearest row of metrics above the
-  messages at the top of the LOG view is kept at the top,
-  so the metrics for that time stay in sight.
+  timestamp, including a number since the epoch in seconds,
+  milliseconds, microseconds, or nanoseconds.  Each row is
+  rendered with a timestamp and a `<column>=<value>` pair for
+  each column.  Text columns, like a host name, are shown as
+  they are.  Rows from multiple files that have the same
+  timestamp are merged into a single line.  Numeric values are
+  right-aligned and decorated with reverse-video bars
+  proportional to each column's observed min/max range.  When
+  the row is focused, an overlay below it labels each column
+  with the source file stem.  When metrics files are loaded
+  along with other logs, the nearest row of metrics above the
+  messages at the top of the LOG view is kept at the top, so
+  the metrics for that time stay in sight.
 * Added the `all_metrics` SQL virtual table, a long-format
   view across every open metrics file.  The `metric` column
   contains the name of the metric and `value` contains its
@@ -281,16 +283,21 @@ Features:
   `lnav_theme_css()` SQL function, so the output looks
   like what is shown on the screen.
 * Added the `lnav_view_lines()` SQL table-valued function
-  to get the lines of a view as they are rendered on the
-  screen.  It takes the view name, an optional range of
-  lines, and an output format: `ansi` for text with ANSI
-  escape sequences that use the theme's colors, `html`
-  for HTML that uses the theme's CSS classes, or `text`
-  for plain text.  For example, the lines currently shown
-  in the LOG view can be retrieved with:
+  to get the rendered lines of a view.  It takes the view
+  name, an optional range of lines, an output format, and
+  how to display the lines.  The format is `ansi` for text
+  with ANSI escape sequences that use the theme's colors,
+  `html` for HTML that uses the theme's CSS classes, or
+  `text` for plain text.  The display is `default`, which
+  renders the lines with the view's display options at
+  their defaults, so hidden fields are shown and searches
+  are not highlighted, or `screen`, which renders them the
+  way the screen draws them.  For example, the lines
+  currently shown in the LOG view can be retrieved with:
   ```
   SELECT content FROM lnav_views,
-      lnav_view_lines(name, top, top + height - 1, 'html')
+      lnav_view_lines(name, top, top + height - 1, 'html',
+                      'screen')
     WHERE name = 'log'
   ```
   The CSS for the `html` output can be retrieved with the
@@ -346,17 +353,23 @@ Features:
 
   This should make it easier for agents to figure out what is
   available in the running build of lnav.
-* A script sent to the external-access server's `/api/exec` can
-  be limited to the effects listed in an `X-Lnav-Allow-Effects`
-  header (e.g. `read, output, view`): commands with any other
-  effect fail the request instead of running, even when run by
-  `:eval` or a script.  SQL that changes data needs `view`, and
-  writing to a file instead of the response, `shell_exec()`,
-  `fstat()`, `ATTACH`, `VACUUM INTO`, `CREATE TRIGGER`,
-  `CREATE VIEW`, and pragmas that change a setting need
-  `external`, including SQL in commands like `:filter-expr`.  A
-  header naming an unknown effect, or one lnav can't read, fails
-  the request.
+* A script sent to the external-access server's `/api/exec`
+  can be limited to the effects listed in an
+  `X-Lnav-Allow-Effects` header (e.g. `read, output, view`):
+  commands with any other effect fail the request with a 403
+  instead of running, even when run by `:eval` or a script.
+  SQL that changes data needs `view`, and writing to a file
+  instead of the response, `shell_exec()`, `fstat()`,
+  `ATTACH`, `VACUUM INTO`, `CREATE TRIGGER`, `CREATE VIEW`,
+  and pragmas that change a setting need `external`, including
+  SQL in commands like `:filter-expr`.  A header naming an
+  unknown effect, or one lnav can't read, fails the request
+  with a 400.  A failed request's JSON has a `type` that says
+  what kind of error it was, like `effect-refused`,
+  `file-not-found`, `busy`, or `script-failed`, and its HTTP
+  status comes from that type, instead of always being a 500.
+  The types are listed in the `error_type` rows of the
+  `lnav_help` table.
 * A request to the external-access server with an `X-Lnav-`
   header that lnav doesn't read (e.g. from a later version, or
   misspelled), or an `X-Lnav-Db-View` value other than `shared`,
@@ -367,22 +380,25 @@ Features:
   nearest-rank method, so the result is always one of the
   values (unlike `median()` and SQLite's `percentile()`, which
   interpolate between values).
-* Added the `time_buckets(t, value, max_buckets)` SQL aggregate
-  function, which returns the values over time as a JSON array
-  with an object per bucket (`start`, `stop`, `count`, `p10`,
-  `median`, `p90`, and `max`), with buckets a power of two of
-  milliseconds wide.  Optional `lo` and `hi` arguments give
-  several groups the same buckets; rows outside of them are
-  skipped.  The percentiles are exact for buckets with up to
-  1024 values and estimated past that, so the memory used
-  does not grow with the number of rows.
+* Added the `time_buckets(t, value, max_buckets)` SQL
+  aggregate function, which returns the values over time,
+  given as milliseconds (like `log_time_msecs`) or timestamps
+  (like `log_time`), as a JSON array with an object per bucket
+  (`start`, `stop`, `count`, `p10`, `median`, `p90`, and
+  `max`), with buckets a power of two of milliseconds wide.
+  Optional `lo` and `hi` arguments give several groups the
+  same buckets; rows outside of them are skipped.  The
+  percentiles are exact for buckets with up to 1024 values and
+  estimated past that, so the memory used does not grow with
+  the number of rows.
 * Added the `measure_value()` and `measure_unit()` SQL
   functions to read numbers with units, like `4.5ms` or
-  `2 KiB`: `measure_value()` returns the number in the unit's
-  base (`0.0045` seconds, `2048` bytes) and `measure_unit()`
-  the base unit (`s`, `B`, or an empty string for a plain
-  number), so values with mixed units can be compared,
-  aggregated, and grouped into ranges in SQL.
+  `2 KiB`, and durations, like the `1m30s` that
+  `humanize_duration()` returns: `measure_value()` returns the
+  number in the unit's base (`0.0045` seconds, `2048` bytes)
+  and `measure_unit()` the base unit (`s`, `B`, or an empty
+  string for a plain number), so values with mixed units can
+  be compared, aggregated, and grouped into ranges in SQL.
 * The `source_log_stmt()` table-valued function has a new
   `schema` column with the `log_msg_schema` of the messages
   logged by each statement, so they can be found with a

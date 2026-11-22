@@ -877,6 +877,23 @@ populate_indexed_columns(vtab_cursor* vc, log_vtab* vt)
 }
 
 /**
+ * The text of the body, given its range in the message.  A cell of a tabular
+ * format can have CSV escapes, like doubled quotes, and its value has the text
+ * without them.
+ */
+static string_fragment
+body_text(const logline_value_vector& values, const line_range& body_range)
+{
+    for (const auto& lv : values.lvv_values) {
+        if (lv.lv_str && lv.lv_origin == body_range) {
+            return string_fragment::from_str(lv.lv_str.value());
+        }
+    }
+    return string_fragment::from_bytes(
+        values.lvv_sbr.get_data() + body_range.lr_start, body_range.length());
+}
+
+/**
  * Whether the cursor's row passes its log_text and log_body REGEXP
  * constraints, as SQLite's regexp() would decide, so a row that doesn't is
  * skipped before SQLite reads its columns.  The text is matched in place,
@@ -915,8 +932,7 @@ text_constraints_match(vtab_cursor* vc, log_vtab* vt)
         if (!body_range.is_valid()) {
             return false;
         }
-        auto sf = string_fragment::from_bytes(
-            text.get_data() + body_range.lr_start, body_range.length());
+        auto sf = body_text(vc->line_values, body_range);
         // The format's regexes are UTF mode, so the body starts and ends on
         // characters: a slice of valid UTF-8 is valid.
         for (const auto& cons : lc.lc_body) {
@@ -1477,12 +1493,12 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
                         if (!body_range.is_valid()) {
                             sqlite3_result_null(ctx);
                         } else {
-                            const char* msg_start
-                                = vc->line_values.lvv_sbr.get_data();
+                            const auto body_sf
+                                = body_text(vc->line_values, body_range);
 
                             sqlite3_result_text(ctx,
-                                                &msg_start[body_range.lr_start],
-                                                body_range.length(),
+                                                body_sf.data(),
+                                                body_sf.length(),
                                                 SQLITE_TRANSIENT);
                         }
                         break;
@@ -2408,14 +2424,36 @@ vt_filter_constraints::add_footer(int32_t orig_col,
                                   int argi)
 {
     switch (footer_column) {
-        case log_footer_columns::time_msecs:
+        case log_footer_columns::time_msecs: {
+            // A millisecond covers a thousand microseconds, and a message
+            // anywhere in it has that log_time_msecs, so the range runs to
+            // the end of the millisecond for an upper bound.  SQLite still
+            // checks the constraint itself, so the range only has to hold
+            // every row that can match.
+            const auto value = sqlite3_value_int64(argv[argi]);
+            const auto first_us
+                = std::chrono::duration_cast<std::chrono::microseconds>(
+                    std::chrono::milliseconds{value});
+            const auto last_us = first_us + std::chrono::microseconds{999};
+            switch (op) {
+                case SQLITE_INDEX_CONSTRAINT_EQ:
+                case SQLITE_INDEX_CONSTRAINT_IS:
+                    this->add_time(op, first_us);
+                    this->add_time(op, last_us);
+                    break;
+                case SQLITE_INDEX_CONSTRAINT_LT:
+                case SQLITE_INDEX_CONSTRAINT_LE:
+                    this->add_time(op, last_us);
+                    break;
+                default:
+                    this->add_time(op, first_us);
+                    break;
+            }
+            break;
+        }
         case log_footer_columns::time_usecs: {
-            auto value = sqlite3_value_int64(argv[argi]);
-            auto us = footer_column == log_footer_columns::time_msecs
-                ? std::chrono::duration_cast<std::chrono::microseconds>(
-                      std::chrono::milliseconds{value})
-                : std::chrono::microseconds{value};
-            this->add_time(op, us);
+            this->add_time(
+                op, std::chrono::microseconds{sqlite3_value_int64(argv[argi])});
             break;
         }
         case log_footer_columns::format: {

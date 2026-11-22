@@ -2487,6 +2487,14 @@ external_log_format::scan_tabular(logfile& lf,
         if (ss.ss_resume.has_value()) {
             ll.set_continued(true);
             ll.set_ignore(!this->jlf_line_format.empty());
+            if (sf.empty()) {
+                // An empty line in a quoted cell, like the blank lines in
+                // the message of a Windows event.  It has no cells, so the
+                // loop below would not carry the open quote to the next line.
+                this->tlf_suspended_state = ss.ss_resume;
+                this->tlf_sub_lines += 1;
+                return scan_match{1000};
+            }
         } else {
             this->tlf_sub_lines = 1 + this->jlf_line_format_init_count;
         }
@@ -2494,6 +2502,18 @@ external_log_format::scan_tabular(logfile& lf,
         ss.ss_expected_count = this->elf_value_def_read_order.size();
         line_finalize_inputs lfi;
         lfi.lfi_line_sf = sf;
+        // A quoted cell can span lines, so the time and level of a row can
+        // be on a line after its first.  They belong to the whole row, so
+        // they are given to the lines of the row that were already scanned.
+        const auto for_row = [&dst, resumed = ss.ss_resume.has_value()](
+                                 auto&& func) {
+            auto index = dst.size() - 1;
+            func(dst[index]);
+            while (resumed && index > 0 && dst[index].is_continued()) {
+                index -= 1;
+                func(dst[index]);
+            }
+        };
         // Reused across rows, the way scan_json() reuses it, so the map
         // keeps its buckets instead of reallocating per line.
         this->lf_desc_captures.clear();
@@ -2536,12 +2556,15 @@ external_log_format::scan_tabular(logfile& lf,
                         canon_sf, &lf, dst, log_time_tm, log_tv, sbc)
                     == timestamp_outcome::ok)
                 {
-                    ll.set_time(log_tv);
+                    for_row([&log_tv](logline& row_ll) {
+                        row_ll.set_time(log_tv);
+                    });
                 } else {
                     ll.set_level(LEVEL_INVALID);
                 }
             } else if (vd->vd_meta.lvm_name == this->elf_level_field) {
-                ll.set_level(this->convert_level(canon_sf, &sbc));
+                const auto level = this->convert_level(canon_sf, &sbc);
+                for_row([level](logline& row_ll) { row_ll.set_level(level); });
             } else if (vd->vd_meta.lvm_name == this->elf_opid_field) {
                 if (!canon_sf.empty() && !canon_sf.is_one_of("-", "--")) {
                     lfi.lfi_opid_cap = canon_sf;

@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "base/attr_line.hh"
+#include "base/error_type.hh"
 #include "base/file_range.hh"
 
 namespace lnav::console {
@@ -130,7 +131,19 @@ struct user_message {
 
     user_message& with_reason(const user_message& um)
     {
+        // A message that wraps another is the same kind of error, unless it
+        // says otherwise.
+        if (this->um_error_type == nullptr) {
+            this->um_error_type = um.um_error_type;
+        }
         return this->with_reason(um.to_attr_line(render_flags::none));
+    }
+
+    /** Marks the message as being of the given kind of error. */
+    user_message& with_error_type(const error_type_t& et)
+    {
+        this->um_error_type = &et;
+        return *this;
     }
 
     user_message& with_errno_reason()
@@ -202,6 +215,8 @@ struct user_message {
     attr_line_t um_reason;
     std::vector<attr_line_t> um_notes;
     attr_line_t um_help;
+    /** The kind of error, or nullptr if it was not marked with one. */
+    const error_type_t* um_error_type{nullptr};
 };
 
 void print(FILE* file, const user_message& um);

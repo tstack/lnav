@@ -2917,7 +2917,9 @@ print_user_msgs(std::vector<lnav::console::user_message> error_list,
         }
 
         lnav::console::print(out_file, iter);
-        if (iter.um_level == lnav::console::user_message::level::error) {
+        if (iter.um_level == lnav::console::user_message::level::error
+            || iter.um_level == lnav::console::user_message::level::fatal)
+        {
             retval = EXIT_FAILURE;
         }
     }
@@ -3815,7 +3817,7 @@ SELECT tbl_name FROM sqlite_master WHERE sql LIKE 'CREATE VIRTUAL TABLE%'
                                 attr_line_t("Fix the errors or manually "
                                             "install the file to ")
                                     .append(lnav::roles::file(
-                                        configs_installed_path.string()))));
+                                        formats_installed_path.string()))));
                 }
                 if (!loader_errors.empty()) {
                     if (print_user_msgs(loader_errors, install_flags)

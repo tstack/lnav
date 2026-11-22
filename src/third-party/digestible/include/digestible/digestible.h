@@ -536,40 +536,44 @@ double tdigest<Values, Weight>::quantile(double p) const
         return (active->values.front().mean);
     }
 
-    const Weight index = (p / 100) * active->total_weight;
+    // The positions are fractional, like half of a centroid's weight, so they
+    // are computed as doubles: Weight is unsigned by default, and truncating
+    // each half shifts the result toward the top of the data.
+    const double total_weight = static_cast<double>(active->total_weight);
+    const double index        = (p / 100) * total_weight;
 
     if (index < 1) { return (min_val); }
 
     // For smaller quantiles, interpolate between minimum value and the first
     // centroid.
     const auto &first = active->values.front();
-    if (first.weight > 1 && index < (first.weight / 2)) {
-        return (lerp(min_val, first.mean, static_cast<double>(index - 1) / (first.weight / 2 - 1)));
+    if (first.weight > 1 && index < (first.weight / 2.0)) {
+        return (lerp(min_val, first.mean, (index - 1) / (first.weight / 2.0 - 1)));
     }
 
-    if (index > active->total_weight - 1) { return (max_val); }
+    if (index > total_weight - 1) { return (max_val); }
 
     // For larger quantiles, interpolate between maximum value and the last
     // centroid.
     const auto &last = active->values.back();
-    if (last.weight > 1 && active->total_weight - index <= last.weight / 2) {
+    if (last.weight > 1 && total_weight - index <= last.weight / 2.0) {
         // A centroid with a weight of 2 or 3 leaves nothing to interpolate
         // over, and index is then total_weight - 1, the top of the data.
-        if (last.weight / 2 <= 1) { return (max_val); }
+        if (last.weight / 2.0 <= 1) { return (max_val); }
         return (max_val
-                - static_cast<double>(active->total_weight - index - 1) /
-                (last.weight / 2 - 1)
+                - (total_weight - index - 1) /
+                (last.weight / 2.0 - 1)
                 * (max_val - last.mean));
     }
 
-    Weight weight_so_far = active->values.front().weight / 2;
+    double weight_so_far = active->values.front().weight / 2.0;
     double quantile      = 0;
     auto quantile_fn     = [index, &weight_so_far, &quantile](const centroid_t &left,
                                                           const centroid_t &right) {
-        Weight delta_weight = (left.weight + right.weight) / 2;
+        double delta_weight = (left.weight + right.weight) / 2.0;
         if (weight_so_far + delta_weight > index) {
-            Weight lower = index - weight_so_far;
-            Weight upper = weight_so_far + delta_weight - index;
+            double lower = index - weight_so_far;
+            double upper = weight_so_far + delta_weight - index;
 
             quantile = (left.mean * upper + right.mean * lower) / (lower + upper);
 

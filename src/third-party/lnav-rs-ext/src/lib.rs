@@ -318,12 +318,19 @@ mod ffi {
 
     #[derive(Serialize)]
     struct ExecError {
+        /// The name of the error's type, so a client can tell the errors
+        /// apart; see the error_type rows of the lnav_help table.
+        #[serde(rename = "type")]
+        pub error_type: String,
         pub msg: String,
         pub reason: String,
         pub help: String,
     }
 
     struct ExecResult {
+        /// The HTTP status for an error, from the error's type.  Zero leaves
+        /// it to the server.
+        pub http_status: u16,
         pub status: String,
         pub content_type: String,
         pub content_fd: i32,

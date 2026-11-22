@@ -4663,9 +4663,9 @@ For support questions, email:
 
 [1;4mmeasure_value[0m[4m([0m[4mvalue[0m[4m)[0m
 ══════════════════════════════════════════════════════════════════════
-  Parse a number with an optional unit, like '4.5ms' or '2 KiB', and
-  return it in the unit's base (seconds, bytes, ...).  Returns NULL if
-  the value is not a number.
+  Parse a number with an optional unit, like '4.5ms' or '2 KiB', or
+  a duration like '1m30s', and return it in the unit's base (seconds,
+  bytes, ...).  Returns NULL if the value is not a number.
 [4mParameter[0m
   [4mvalue[0m   The string to parse
 [4mSee Also[0m
@@ -4688,6 +4688,10 @@ For support questions, email:
 #2 To get a size in bytes:
    [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmeasure_value[0m[37m[40m([0m[35m[40m'2 KiB'[0m[37m[40m)                     [0m
    2048
+
+#3 To get the seconds in a duration:
+   [37m[40m;[0m[1m[36m[40mSELECT[0m[37m[40m [0m[1m[37m[40mmeasure_value[0m[37m[40m([0m[35m[40m'1m30s'[0m[37m[40m)                     [0m
+   90
 
 
 [1;4mmin[0m[4m([0m[4mX[0m[4m, ...)[0m
@@ -5901,17 +5905,17 @@ For support questions, email:
   are read from the first row
 [4mParameters[0m
   [4mt[0m             The time, in milliseconds (e.g.
-                log_time_msecs)
+                log_time_msecs) or as a timestamp (e.g. log_time)
   [4mvalue[0m         The numeric value
   [4mmax_buckets[0m   The most buckets to use for the span,
                 at least 2
-  [4mlo[0m            The start of the span, in
-                milliseconds, so several groups get the same buckets.
-                Rows before it are skipped.  Defaults to the group's
-                first time
-  [4mhi[0m            The end of the span, in milliseconds.
-                Rows after it are skipped.  Defaults to the group's
-                last time
+  [4mlo[0m            The start of the span, in milliseconds
+                or as a timestamp, so several groups get the same
+                buckets.  Rows before it are skipped.  Defaults to the
+                group's first time
+  [4mhi[0m            The end of the span, in milliseconds
+                or as a timestamp.  Rows after it are skipped.
+                Defaults to the group's last time
 [4mSee Also[0m
   [1m:convert-time-to[0m, [1m:current-time[0m, [1m:unix-time[0m, [1mdate()[0m, [1mdatetime()[0m, 
   [1mhumanize_duration()[0m, [1mjulianday()[0m, [1mstrftime()[0m, [1mtime()[0m, [1mtimediff()[0m, 

@@ -130,14 +130,13 @@ public:
         // can have suppressed siblings behind them.
         bool is_metric_line() const;
 
-        // Optional stop conditions on the sibling walk.  Default off
-        // to match the renderer/mark/spectrogram callers, which want
-        // every suppressed same-timestamp sibling.  `metrics_vtab`
-        // enables `skip_filtered_out` so the vtab respects the LOG
-        // view's filters.
+        // Optional stop conditions on the sibling walk.
         struct sibling_policy {
-            // Skip rows that the active filters are hiding.
-            bool skip_filtered_out{false};
+            // Skip rows that the active filters or a hidden file are
+            // hiding, so the composed line, its overlay, marks, the
+            // spectrogram, and `all_metrics` only have the samples that
+            // the LOG view is showing.
+            bool skip_filtered_out{true};
         };
 
         // Per-sibling record yielded by the sibling range.  Values and

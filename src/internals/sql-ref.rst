@@ -3245,7 +3245,7 @@ measure_unit(*value*)
 measure_value(*value*)
 ^^^^^^^^^^^^^^^^^^^^^^
 
-  Parse a number with an optional unit, like '4.5ms' or '2 KiB', and return it in the unit's base (seconds, bytes, ...).  Returns NULL if the value is not a number.
+  Parse a number with an optional unit, like '4.5ms' or '2 KiB', or a duration like '1m30s', and return it in the unit's base (seconds, bytes, ...).  Returns NULL if the value is not a number.
 
   **PRQL Name**: humanize.measure_value
 
@@ -3266,6 +3266,13 @@ measure_value(*value*)
 
       ;SELECT measure_value('2 KiB')
       2048
+
+    To get the seconds in a duration:
+
+    .. code-block::  custsqlite
+
+      ;SELECT measure_value('1m30s')
+      90
 
   **See Also**
     :ref:`anonymize`, :ref:`char`, :ref:`charindex`, :ref:`concat_ws`, :ref:`concat`, :ref:`decode`, :ref:`encode`, :ref:`endswith`, :ref:`extract`, :ref:`fuzzy_match`, :ref:`group_concat`, :ref:`group_spooky_hash_agg`, :ref:`gunzip`, :ref:`gzip`, :ref:`humanize_duration`, :ref:`humanize_file_size`, :ref:`humanize_id`, :ref:`instr`, :ref:`leftstr`, :ref:`length`, :ref:`logfmt2json`, :ref:`lower`, :ref:`ltrim`, :ref:`measure_unit`, :ref:`padc`, :ref:`padl`, :ref:`padr`, :ref:`parse_url`, :ref:`pretty_print`, :ref:`printf`, :ref:`proper`, :ref:`regexp_capture_into_json`, :ref:`regexp_capture`, :ref:`regexp_match`, :ref:`regexp_replace`, :ref:`replace`, :ref:`replicate`, :ref:`reverse`, :ref:`rightstr`, :ref:`rtrim`, :ref:`sparkline_agg`, :ref:`spooky_hash`, :ref:`startswith`, :ref:`strfilter`, :ref:`substr`, :ref:`timezone`, :ref:`trim`, :ref:`unhex`, :ref:`unicode`, :ref:`unparse_url`, :ref:`upper`, :ref:`xpath`
@@ -4756,11 +4763,11 @@ time_buckets(*t*, *value*, *max_buckets*, *\[lo\]*, *\[hi\]*)
   Returns the values over time as a JSON array with an object for each time bucket that has values, in time order: its start and stop in milliseconds, the count, and the p10, median, p90, and max of the values.  The percentiles use the nearest-rank method for a bucket with up to 1024 values and are estimated with a t-digest past that, so memory does not grow with the number of rows.  The buckets are a power of two of milliseconds wide, the narrowest that fits the time span in max_buckets buckets.  The max_buckets, lo, and hi arguments are read from the first row
 
   **Parameters**
-    * **t\*** --- The time, in milliseconds (e.g. log_time_msecs)
+    * **t\*** --- The time, in milliseconds (e.g. log_time_msecs) or as a timestamp (e.g. log_time)
     * **value\*** --- The numeric value
     * **max_buckets\*** --- The most buckets to use for the span, at least 2
-    * **lo** --- The start of the span, in milliseconds, so several groups get the same buckets.  Rows before it are skipped.  Defaults to the group's first time
-    * **hi** --- The end of the span, in milliseconds.  Rows after it are skipped.  Defaults to the group's last time
+    * **lo** --- The start of the span, in milliseconds or as a timestamp, so several groups get the same buckets.  Rows before it are skipped.  Defaults to the group's first time
+    * **hi** --- The end of the span, in milliseconds or as a timestamp.  Rows after it are skipped.  Defaults to the group's last time
 
   **Examples**
     To get the values over time in at most 4 buckets:

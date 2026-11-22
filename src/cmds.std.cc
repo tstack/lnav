@@ -1606,6 +1606,9 @@ com_filter_expr(exec_context& ec,
         args[1] = fmt::format(FMT_STRING("SELECT 1 WHERE {}"), expr);
 
         auto_mem<sqlite3_stmt> stmt(sqlite3_finalize);
+        // Forget a refusal from SQL compiled earlier, so it isn't reported
+        // for this expression.
+        lnav::sql::take_external_denial();
 #ifdef SQLITE_PREPARE_PERSISTENT
         auto retcode = sqlite3_prepare_v3(lnav_data.ld_db.in(),
                                           args[1].c_str(),
@@ -1621,6 +1624,12 @@ com_filter_expr(exec_context& ec,
                                           nullptr);
 #endif
         if (retcode != SQLITE_OK) {
+            auto denial = lnav::sql::take_external_denial();
+            if (denial) {
+                TRY(ec.check_effect(
+                    help_effect_t::external, denial->ed_what, denial->ed_why));
+            }
+
             const char* errmsg = sqlite3_errmsg(lnav_data.ld_db);
             auto expr_al
                 = attr_line_t(expr)

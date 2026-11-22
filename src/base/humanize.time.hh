@@ -83,6 +83,11 @@ public:
     template<class Rep, class Period>
     static duration from(const std::chrono::duration<Rep, Period>& d)
     {
+        // A count of seconds as a double, like 1.005, is a hair below the
+        // value it was written as, so truncating would show it as 1s004ms.
+        if constexpr (std::is_floating_point_v<Rep>) {
+            return duration{std::chrono::round<std::chrono::nanoseconds>(d)};
+        }
         return duration{
             std::chrono::duration_cast<std::chrono::nanoseconds>(d)};
     }

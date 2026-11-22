@@ -467,6 +467,8 @@ com_filter_context(exec_context& ec,
     tss->tss_context_after = after;
     tss->text_filters_changed();
     tc->reload_data();
+    lnav_data.ld_filter_status_source.update_filtered(tss);
+    lnav_data.ld_status[LNS_FILTER].set_needs_update();
 
     retval = fmt::format(FMT_STRING("info: filter context set to {} before, "
                                     "{} after"),

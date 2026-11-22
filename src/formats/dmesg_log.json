@@ -5,7 +5,10 @@
         "description": "Log format for the Linux kernel's dmesg command",
         "regex": {
             "decoded": {
-                "pattern": "^(?<facility>[a-z0-9]+)\\s*:(?<level>[a-z]+)\\s*: \\[(?<timestamp>\\s*\\d+\\.\\d+)\\] (?<body>.*)"
+                "pattern": "^(?<facility>[a-z0-9]+)\\s*:(?<level>emerg|alert|crit|err|warn|notice|info|debug)\\s*: \\[(?<timestamp>\\s*\\d+\\.\\d+)\\] (?<body>.*)"
+            },
+            "decoded-ctime": {
+                "pattern": "^(?<facility>[a-z0-9]+)\\s*:(?<level>emerg|alert|crit|err|warn|notice|info|debug)\\s*: \\[(?<timestamp>\\w{3} \\w{3} [ \\d]\\d \\d{2}:\\d{2}:\\d{2} \\d{4})\\] (?<body>.*)"
             },
             "elapsed": {
                 "pattern": "^\\[(?<timestamp>\\s*\\d+\\.\\d+)\\] (?<body>.*)"
@@ -28,7 +31,8 @@
             }
         },
         "timestamp-format": [
-            "%E.%f"
+            "%E.%f",
+            "%a %b %e %H:%M:%S %Y"
         ],
         "timestamp-anchor": {
             "pattern": "setting system clock to .* \\((\\d+)\\)$",
@@ -53,6 +57,10 @@
             {
                 "line": "daemon:notice: [    5.678901] systemd[1]: Started Journal Service.",
                 "level": "notice"
+            },
+            {
+                "line": "kern  :err   : [Sat Nov 21 10:00:01 2026] usb 1-1: device descriptor read/64, error -71",
+                "level": "error"
             }
         ]
     }

@@ -54,4 +54,4 @@
 [36m =[0m   [36mhelp[0m: every pattern should have at least one sample that it matches
 [1m[31m💀[0m [1;4m[31mfatal[0m: unable to install format file: [1m{test_dir}/bad-config/formats/invalid-sample/format.json[0m
  [33mreason[0m: the file is not valid
-[36m =[0m [36mhelp[0m: Fix the errors or manually install the file to [1m../installer-test-home/.lnav/configs/installed[0m
+[36m =[0m [36mhelp[0m: Fix the errors or manually install the file to [1m../installer-test-home/.lnav/formats/installed[0m

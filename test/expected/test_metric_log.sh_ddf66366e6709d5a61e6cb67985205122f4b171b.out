@@ -1,0 +1,4 @@
+2026-11-21T10:00:00.000000Z  disk_pct=[7m [0m       10  host=web1      
+2026-11-21T10:00:01.500000Z  disk_pct=[7m   [0m     20  host=web1      
+2026-11-21T10:00:02.000000Z  disk_pct=[7m       [0m 30  host=web1      
+2026-11-21T10:00:03.250000Z  disk_pct=[7m        40[0m  host=web1      

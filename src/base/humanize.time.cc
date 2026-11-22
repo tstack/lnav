@@ -256,11 +256,13 @@ duration::to_string() const
             continue;
         }
 
-        snprintf(segment,
-                 sizeof(segment),
-                 curr_interval->format,
-                 amount,
-                 curr_interval->symbol);
+        // The milliseconds are padded to three digits to follow the
+        // seconds, but on their own, like "5ms", they are not.
+        const auto* format = curr_interval->format;
+        if (!this->d_compact && curr_interval == intervals && remaining == 0) {
+            format = "%lld%s";
+        }
+        snprintf(segment, sizeof(segment), format, amount, curr_interval->symbol);
         retval.insert(0, segment);
         if (remaining > 0 && amount < 10 && curr_interval->symbol[0]) {
             retval.insert(0, "0");

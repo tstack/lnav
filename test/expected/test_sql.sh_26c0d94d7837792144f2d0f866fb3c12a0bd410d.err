@@ -2,5 +2,5 @@
  [1m[31mreason[0m: No “[4mlog_time[0m” column found in the result set
 [36m --> [0m[1mcommand-option[0m:2
 [36m | [0m[37m[40m:[0m[1m[36m[40mspectrogram[0m[37m[40m sc_bytes                   [0m
-[36m =[0m [36mnote[0m: An ascending “[4mlog_time[0m” column is needed to render a spectrogram
-[36m =[0m [36mhelp[0m: Include a “[4mlog_time[0m” column in your  statement. Use an [1m[36mAS[0m directive to alias a computed timestamp
+[36m =[0m [36mnote[0m: An ascending “[4mlog_time[0m”, “[4mlog_time_msecs[0m”, or “[4mlog_time_usecs[0m” column is needed to render a spectrogram
+[36m =[0m [36mhelp[0m: Include one of those columns in your [1m[36mSELECT[0m statement.  Use an [1m[36mAS[0m directive to alias a computed timestamp

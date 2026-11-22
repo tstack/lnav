@@ -1,0 +1,3 @@
+2026-11-22T10:00:00Z  cpu_pct=[7m      [0m12.5  queue_depth=[7m   [0m      3
+2026-11-22T10:00:01Z  cpu_pct=[7m      13.0[0m  queue_depth=[7m         5[0m
+2026-11-22T10:00:02Z  cpu_pct=[7m [0m    11.75  queue_depth=[7m [0m        2

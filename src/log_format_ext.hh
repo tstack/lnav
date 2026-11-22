@@ -777,6 +777,11 @@ public:
 
     void adopt_scan_state(format_scan_state& fss) override;
 
+    void restart_at_message() override
+    {
+        this->tlf_suspended_state = std::nullopt;
+    }
+
     file_ssize_t tlf_header_end{0};
     char tlf_separator{','};
     size_t tlf_extra_count{0};

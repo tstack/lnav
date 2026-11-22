@@ -278,6 +278,12 @@ public:
                                shared_buffer_ref& sbr,
                                scan_batch_context& sbc) = 0;
 
+    /**
+     * The scan is going back to the first line of a message, so forget what
+     * was carried from one line to the next, like an open quoted cell.
+     */
+    virtual void restart_at_message() {}
+
     virtual bool scan_for_partial(const log_format_file_state& lffs,
                                   shared_buffer_ref& sbr,
                                   size_t& len_out) const

@@ -193,7 +193,7 @@ n
 0
 
 --- read, output: :filter-out GET
-{"msg":":filter-out is not allowed here","reason":"its effect is “view”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":":filter-out is not allowed here","reason":"its effect is “view”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output,view: :filter-out GET
 n
 1
@@ -201,18 +201,18 @@ n
 --- read,output,view: ;DELETE FROM lnav_view_filters
 
 --- read,output: :quit
-{"msg":":quit is not allowed here","reason":"its effect is “exit”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":":quit is not allowed here","reason":"its effect is “exit”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output: :eval :echo hi
 hi
 
 --- read,output: :eval :filter-out GET
-{"msg":":filter-out is not allowed here","reason":"its effect is “view”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":":filter-out is not allowed here","reason":"its effect is “view”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output,view: :eval :sh echo hi
-{"msg":":sh is not allowed here","reason":"its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":":sh is not allowed here","reason":"its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output: |ext_access_hide.lnav
-{"msg":"|ext_access_hide.lnav is not allowed here","reason":"it is not an installed script, so its effect is “external”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"|ext_access_hide.lnav is not allowed here","reason":"it is not an installed script, so its effect is “external”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output: |/etc/hosts
-{"msg":"|/etc/hosts is not allowed here","reason":"it is not an installed script, so its effect is “external”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"|/etc/hosts is not allowed here","reason":"it is not an installed script, so its effect is “external”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output,external: |ext_access_echo_file.lnav
 from a script file
 
@@ -220,38 +220,38 @@ from a script file
 from an installed script
 
 --- read,output: |ext_access_installed_hide
-{"msg":":filter-out is not allowed here","reason":"its effect is “view”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":":filter-out is not allowed here","reason":"its effect is “view”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output: ;UPDATE lnav_view_filters SET enabled = 0
-{"msg":"an SQL statement that changes data is not allowed here","reason":"its effect is “view”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"an SQL statement that changes data is not allowed here","reason":"its effect is “view”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output: /GET
-{"msg":"a search is not allowed here","reason":"its effect is “view”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"a search is not allowed here","reason":"its effect is “view”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output: ;SELECT 1 AS n
-{"msg":":write-csv-to ext_access_effects.csv is not allowed here","reason":"its effect is “external”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":":write-csv-to ext_access_effects.csv is not allowed here","reason":"its effect is “external”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output,view,config: ;.dump ext_access_effects.sql lnav_help
-{"msg":".dump is not allowed here","reason":"its effect is “external”, and only these are allowed: read, output, view, config","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":".dump is not allowed here","reason":"its effect is “external”, and only these are allowed: read, output, view, config","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output: ;SELECT shell_exec('echo hi') AS out
-{"msg":"shell_exec() is not allowed here","reason":"it runs a program, so its effect is “external”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"shell_exec() is not allowed here","reason":"it runs a program, so its effect is “external”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output,view: :filter-expr shell_exec('echo hi') IS NOT NULL
-{"msg":"invalid filter expression: shell_exec('echo hi') IS NOT NULL","reason":"not authorized to use function: shell_exec","help":":filter-expr expr\n══════════════════════════════════════════════════════════════════════\n  Set the filter expression"}
+{"type":"effect-refused","msg":"shell_exec() is not allowed here","reason":"it runs a program, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output: ;SELECT * FROM fstat('/')
-{"msg":"fstat() is not allowed here","reason":"it reads the file system, so its effect is “external”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"fstat() is not allowed here","reason":"it reads the file system, so its effect is “external”, and only these are allowed: read, output","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output,view: ;ATTACH 'ext_access_attach.db' AS ext_db
-{"msg":"ATTACH is not allowed here","reason":"it opens a database file, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"ATTACH is not allowed here","reason":"it opens a database file, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output,view: ;VACUUM INTO 'ext_access_attach.db'
-{"msg":"ATTACH is not allowed here","reason":"it opens a database file, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"ATTACH is not allowed here","reason":"it opens a database file, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output,view: ;CREATE TEMP TRIGGER ext_trig AFTER INSERT ON lnav_events BEGIN SELECT 1; END
-{"msg":"CREATE TRIGGER is not allowed here","reason":"the trigger would run later, without this request's limits, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"CREATE TRIGGER is not allowed here","reason":"the trigger would run later, without this request's limits, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output,view: ;CREATE TEMP VIEW lnav_file AS SELECT shell_exec('echo hi') AS content_id
-{"msg":"CREATE VIEW is not allowed here","reason":"the view would run later, without this request's limits, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"CREATE VIEW is not allowed here","reason":"the view would run later, without this request's limits, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output,view: ;PRAGMA writable_schema = 1
-{"msg":"PRAGMA writable_schema = ... is not allowed here","reason":"it changes a setting, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
+{"type":"effect-refused","msg":"PRAGMA writable_schema = ... is not allowed here","reason":"it changes a setting, so its effect is “external”, and only these are allowed: read, output, view","help":"the X-Lnav-Allow-Effects header of an external-access request lists the effects its commands may have; see the effect column of the lnav_help table"}
 --- read,output: ;SELECT name FROM pragma_table_info('lnav_view_filters') LIMIT 2
 name
 view_name
 filter_id
 
 --- read,bogus: :echo hi
-{"msg":"unknown effect in X-Lnav-Allow-Effects: bogus","reason":"","help":"the effects are listed in the effect column of the lnav_help table"}
+{"type":"bad-request-header","msg":"unknown effect in X-Lnav-Allow-Effects: bogus","reason":"","help":"the effects are listed in the effect column of the lnav_help table"}
 --- none: ;SELECT count(*) AS n FROM lnav_view_filters
 n
 0

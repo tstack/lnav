@@ -1,0 +1,6 @@
+"Message","Id","ProviderName","TimeCreated","LevelDisplayName","ActivityId"
+"An account was logged on.
+
+Subject:
+	Account Name:		""svc""","4624","Microsoft-Windows-Security-Auditing","10/22/2018  4:13:27 AM","Information","{ABC}"
+"Logon failed","4625","Microsoft-Windows-Security-Auditing","10/22/2018  4:13:28 AM","Error",""

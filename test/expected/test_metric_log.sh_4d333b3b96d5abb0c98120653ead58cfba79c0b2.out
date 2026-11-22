@@ -1,4 +1,4 @@
-2020-01-01T06:00:00.000000  cpu=            mem=[7m       512[0m  requests=          
+2020-01-01T06:00:00Z  mem=[7m       512[0m
 [4m▌ Line 0 parser details.[0m
  Received Time: [1m2020-01-01T06:00:00.000000+0000[0m — [1min the future[0m  Format: [1m%Y-%m-%dT%H:%M:%S%z[0m  Default Zone: [32mnone[0m
  [1mPermalink:[0m    #msg00059b0dc9701800-v1:99fa4b955d2cb6d8f3663d13ff99f3de

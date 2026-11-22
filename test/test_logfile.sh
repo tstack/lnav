@@ -976,6 +976,13 @@ run_cap_test ${lnav_test} -n \
     -c ";SELECT log_time FROM all_logs ORDER BY log_line DESC LIMIT 1" \
     ${test_dir}/logfile_dmesg.0
 
+# piped elapsed times should be based on when the lines arrived, which
+# needs a zone with a non-zero offset to check
+printf '[    0.000000] Linux version 5.4.0\n' | run_cap_test \
+    env TZ=America/Los_Angeles TEST_COMMENT="piped dmesg base time" \
+    ${lnav_test} -n \
+    -c ";SELECT abs(strftime('%s', log_time) - strftime('%s', 'now', 'localtime')) < 300 AS near_now FROM all_logs"
+
 run_cap_test ${lnav_test} -n \
     -c ";SELECT log_time FROM all_logs LIMIT 1" \
     ${test_dir}/Xorg.log.0

@@ -1,0 +1,18 @@
+[
+    {
+        "log_line": 0,
+        "log_time": "2018-10-22 04:13:27.000000",
+        "log_level": "info",
+        "log_opid": "{ABC}",
+        "log_msg_line_count": 10,
+        "log_body": "An account was logged on.\n\nSubject:\n\tAccount Name:\t\t\"svc\""
+    },
+    {
+        "log_line": 7,
+        "log_time": "2018-10-22 04:13:28.000000",
+        "log_level": "error",
+        "log_opid": null,
+        "log_msg_line_count": 4,
+        "log_body": "Logon failed"
+    }
+]

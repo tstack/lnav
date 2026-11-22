@@ -741,12 +741,84 @@ sql_humanize_file_size(file_ssize_t value)
     return humanize::file_size(value, humanize::alignment::columnar);
 }
 
+/**
+ * A duration in the form humanize_duration() writes, like "1m30s", "2h", or
+ * "1s500ms", as seconds.  The units go from the largest to the smallest, so
+ * "m" is minutes and can't be confused with the milli prefix.
+ */
+static std::optional<double>
+parse_compound_duration(string_fragment sf)
+{
+    struct unit_def {
+        string_fragment ud_name;
+        double ud_seconds;
+    };
+    // Longer names first, so "ms" is not read as "m" followed by "s".
+    static const unit_def UNITS[] = {
+        {"ms"_frag, 0.001},
+        {"us"_frag, 0.000001},
+        {"\xc2\xb5s"_frag, 0.000001},
+        {"ns"_frag, 0.000000001},
+        {"d"_frag, 86400.0},
+        {"h"_frag, 3600.0},
+        {"m"_frag, 60.0},
+        {"s"_frag, 1.0},
+    };
+
+    auto neg = false;
+    if (sf.startswith("-")) {
+        neg = true;
+        sf = sf.substr(1);
+    }
+    if (sf.empty()) {
+        return std::nullopt;
+    }
+
+    double retval = 0.0;
+    auto last_unit = std::numeric_limits<double>::max();
+    while (!sf.empty()) {
+        size_t num_len = 0;
+        auto seen_dot = false;
+        while (num_len < sf.length()
+               && (isdigit(sf[num_len]) || (sf[num_len] == '.' && !seen_dot)))
+        {
+            seen_dot = seen_dot || sf[num_len] == '.';
+            num_len += 1;
+        }
+        if (num_len == 0) {
+            return std::nullopt;
+        }
+        auto num_res = scn::scan_value<double>(
+            std::string_view{sf.data(), num_len});
+        if (!num_res || !num_res->range().empty()) {
+            return std::nullopt;
+        }
+        sf = sf.substr(num_len);
+
+        const unit_def* found = nullptr;
+        for (const auto& ud : UNITS) {
+            if (sf.startswith(ud.ud_name.data())) {
+                found = &ud;
+                break;
+            }
+        }
+        if (found == nullptr || found->ud_seconds >= last_unit) {
+            return std::nullopt;
+        }
+        last_unit = found->ud_seconds;
+        retval += num_res->value() * found->ud_seconds;
+        sf = sf.substr(found->ud_name.length());
+    }
+
+    return neg ? -retval : retval;
+}
+
 std::optional<double>
 sql_measure_value(string_fragment value)
 {
     auto res = humanize::try_from<double>(value.trim());
     if (!res) {
-        return std::nullopt;
+        return parse_compound_duration(value.trim());
     }
     return res->value;
 }
@@ -756,6 +828,9 @@ sql_measure_unit(string_fragment value)
 {
     auto res = humanize::try_from<double>(value.trim());
     if (!res) {
+        if (parse_compound_duration(value.trim())) {
+            return "s"_frag;
+        }
         return std::nullopt;
     }
     return res->unit_suffix;
@@ -1172,9 +1247,9 @@ string_extension_functions(struct FuncDef** basic_funcs,
             builder(
                 help_text("measure_value",
                           "Parse a number with an optional unit, like '4.5ms' "
-                          "or '2 KiB', and return it in the unit's base "
-                          "(seconds, bytes, ...).  Returns NULL if the value "
-                          "is not a number.")
+                          "or '2 KiB', or a duration like '1m30s', and return "
+                          "it in the unit's base (seconds, bytes, ...).  "
+                          "Returns NULL if the value is not a number.")
                     .sql_function()
                     .with_prql_path({"humanize", "measure_value"})
                     .with_parameter({"value", "The string to parse"})
@@ -1186,6 +1261,10 @@ string_extension_functions(struct FuncDef** basic_funcs,
                     .with_example({
                         "To get a size in bytes",
                         "SELECT measure_value('2 KiB')",
+                    })
+                    .with_example({
+                        "To get the seconds in a duration",
+                        "SELECT measure_value('1m30s')",
                     })),
 
         sqlite_func_adapter<decltype(&sql_measure_unit), sql_measure_unit>::

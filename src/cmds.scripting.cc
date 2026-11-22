@@ -920,6 +920,33 @@ const typed_json_path_container<external_request_headers>
 
 }  // namespace
 
+const DIST_SLICE(error_types) lnav::error_type_t ERR_BAD_REQUEST_HEADER(
+    "bad-request-header",
+    400,
+    "A header of an external-access request could not be read or has a "
+    "value that lnav cannot use, so nothing was run");
+
+const DIST_SLICE(error_types) lnav::error_type_t ERR_SCRIPT_FAILED(
+    "script-failed",
+    422,
+    "A script sent to the external-access server failed, like with an "
+    "unknown command or an SQL error, and the error has no more specific "
+    "type");
+
+static void
+set_request_error(ExecResult& res,
+                  const lnav::error_type_t& et,
+                  const std::string& msg,
+                  const std::string& reason,
+                  const std::string& help)
+{
+    res.http_status = et.get_http_status();
+    res.error.error_type = et.get_name().to_string();
+    res.error.msg = msg;
+    res.error.reason = reason;
+    res.error.help = help;
+}
+
 ExecResult
 execute_external_command(::rust::String rs_src,
                          ::rust::String rs_script,
@@ -936,18 +963,23 @@ execute_external_command(::rust::String rs_src,
                         .with_ignore_unused(true)
                         .of(string_fragment::from_str(hdrs_str));
     if (hdrs_res.isErr()) {
-        retval->error.msg = "unable to read the request headers";
-        retval->error.reason = hdrs_res.unwrapErr()[0].to_attr_line().al_string;
+        set_request_error(*retval,
+                          ERR_BAD_REQUEST_HEADER,
+                          "unable to read the request headers",
+                          hdrs_res.unwrapErr()[0].to_attr_line().al_string,
+                          "");
         return *retval;
     }
     auto req_hdrs = hdrs_res.unwrap();
     auto shared_db = req_hdrs.wants_shared_db_view();
     auto effects_res = req_hdrs.allowed_effects();
     if (effects_res.isErr()) {
-        retval->error.msg = effects_res.unwrapErr();
-        retval->error.help
-            = "the effects are listed in the effect column of the lnav_help "
-              "table";
+        set_request_error(*retval,
+                          ERR_BAD_REQUEST_HEADER,
+                          effects_res.unwrapErr(),
+                          "",
+                          "the effects are listed in the effect column of the "
+                          "lnav_help table");
         return *retval;
     }
     auto allowed_effects = effects_res.unwrap();
@@ -959,6 +991,18 @@ execute_external_command(::rust::String rs_src,
             log_debug("executing remote command from: %s", src.c_str());
             db_label_source ext_db_source;
             auto& ec = lnav_data.ld_exec_context;
+            // The error's type says what kind of failure it was; one that
+            // doesn't say is a script that failed.
+            auto set_error = [&retval](
+                                 const lnav::console::user_message& um) {
+                set_request_error(
+                    *retval,
+                    um.um_error_type != nullptr ? *um.um_error_type
+                                                : ERR_SCRIPT_FAILED,
+                    um.um_message.al_string,
+                    um.um_reason.al_string,
+                    um.um_help.al_string);
+            };
             // A client running commands on someone's behalf can limit what
             // they may change; commands and SQL that would do more fail.
             std::optional<exec_context::allowed_effects_guard> aeg;
@@ -1001,20 +1045,14 @@ execute_external_command(::rust::String rs_src,
             for (const auto& line : script_frag.split_lines()) {
                 auto res = me.push_back(line);
                 if (res.isErr()) {
-                    auto um = res.unwrapErr();
-                    retval->error.msg = um.um_message.al_string;
-                    retval->error.reason = um.um_reason.al_string;
-                    retval->error.help = um.um_help.al_string;
+                    set_error(res.unwrapErr());
                     ec.ec_local_vars.pop();
                     return;
                 }
             }
             auto res = me.final();
             if (res.isErr()) {
-                auto um = res.unwrapErr();
-                retval->error.msg = um.um_message.al_string;
-                retval->error.reason = um.um_reason.al_string;
-                retval->error.help = um.um_help.al_string;
+                set_error(res.unwrapErr());
             } else {
                 fseek(ec_out.first, 0, SEEK_SET);
                 retval->status = me.me_last_result;

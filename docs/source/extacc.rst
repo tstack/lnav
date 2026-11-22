@@ -128,6 +128,22 @@ The following routes are available:
   Without the header, a script can do anything.  A header that names an
   unknown effect, or that lnav can't read, fails the request.
 
+  When the request fails, the response is a JSON object with the
+  :code:`type`, :code:`msg`, :code:`reason`, and :code:`help` for the error.
+  The :code:`type` is a name that says what kind of error it was, like
+  :code:`effect-refused` or :code:`file-not-found`, and the HTTP status comes
+  from it.  The types, with their statuses, are the :code:`error_type` rows of
+  the :code:`lnav_help` table:
+
+  .. code-block:: sql
+
+      SELECT name, synopsis, summary FROM lnav_help WHERE kind = 'error_type'
+
+  An error from a script that has no more specific type is a
+  :code:`script-failed`, with a 422.  The commands before the one that failed
+  have already run.  A header that lnav doesn't read, or that is given more
+  than once, fails the request with a 400 before anything is run.
+
 * | :code:`POST /api/poll`
   | :code:`Content-Type: application/json`
 

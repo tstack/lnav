@@ -277,14 +277,23 @@ set(BUILTIN_LNAV_SCRIPTS
         scripts/find-msg.lnav
         scripts/find-chained-msg.lnav
         scripts/journald-url-handler.lnav
+        scripts/lnav-breakpoint-handler.lnav
         scripts/lnav-copy-text.lnav
         scripts/lnav-link-callback.lnav
+        scripts/lnav-moveto-breakpoint.lnav
+        scripts/lnav-moveto-opid.lnav
+        scripts/lnav-open-source.lnav
         scripts/lnav-pop-view.lnav
+        scripts/lnav-src-loc-handler.lnav
+        scripts/lnav-stack-frame-handler.lnav
+        scripts/lnav-write-external-access-info-to.lnav
         scripts/partition-by-boot.lnav
+        scripts/pg-annotate-errors.lnav
         scripts/piper-url-handler.lnav
         scripts/rename-stdin.lnav
         scripts/report-access-log.lnav
         scripts/search-for.lnav
+        scripts/strace-url-handler.lnav
         scripts/zk-set-ops.lnav
 )
 
@@ -300,6 +309,7 @@ list(APPEND GEN_SRCS builtin-scripts.h builtin-scripts.cc)
 
 set(BUILTIN_SH_SCRIPTS
         scripts/dump-pid.sh
+        scripts/otel_collector_log-converter.sh
         scripts/pcap_log-converter.sh
         scripts/zookeeper.sql
 )

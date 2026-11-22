@@ -196,6 +196,9 @@ public:
                 R"(^(?:\*\*\*\s+)?\[(?<timestamp>[\w:+ \.,+/-]+)\] \[(trace|debug\d?|info|warn(?:ing)?|error|critical|fatal)\]\s+)"),
             pcre_format(
                 R"(^(?:\*\*\*\s+)?(?<timestamp>[\w:+ \.,+/-]+) (?:-- )?(trace|debug\d?|info|warn(?:ing)?|error|critical|fatal)(?: --)?\s+)"),
+            // A bracketed timestamp without a level, like `dmesg -T`.
+            pcre_format(
+                R"(^(?:\*\*\*\s+)?\[(?<timestamp>\w[\w:+ \.,+/-]*)\]\s)"),
             pcre_format(R"(^(?:\*\*\*\s+)?(?<timestamp>\w.*))"),
 
             pcre_format(),
@@ -330,12 +333,19 @@ public:
         auto level_cap = md[2];
 
         if (!level_cap) {
-            lr.lr_end = prefix_len
-                = lr.lr_start + lf->get_time_scanner().dts_fmt_len;
-            auto rem_sf = line_sf.substr(prefix_len);
-            auto body_sf = rem_sf.consume(isspace);
-            if (body_sf) {
-                prefix_len = body_sf->sf_begin;
+            lr.lr_end = lr.lr_start + lf->get_time_scanner().dts_fmt_len;
+            // A pattern whose timestamp runs to the end of the match, like
+            // the catch-all, leaves it to the time scanner to find where the
+            // timestamp ends, and the body starts after it.  Otherwise, the
+            // body starts after the match, like after the `]` of a bracketed
+            // timestamp.
+            if (ts_cap.sf_end == md[0]->sf_end) {
+                prefix_len = lr.lr_end;
+                auto rem_sf = line_sf.substr(prefix_len);
+                auto body_sf = rem_sf.consume(isspace);
+                if (body_sf) {
+                    prefix_len = body_sf->sf_begin;
+                }
             }
         }
         sa.emplace_back(lr, L_TIMESTAMP.value());
@@ -536,11 +546,45 @@ public:
         auto& dts = sbc.sbc_time_scanner;
         exttm tm;
         timeval tv;
-        if (dts.scan(ts_sf.data(), ts_sf.length(), nullptr, &tm, tv) == nullptr)
-        {
-            return scan_error{fmt::format(
-                FMT_STRING("metric row timestamp did not parse: {}"),
-                ts_sf.to_string())};
+        // Exporters like InfluxDB and Prometheus write the time as a number
+        // since the epoch, in seconds or a finer unit.
+        static const char* const EPOCH_FORMATS[] = {
+            "%s",
+            "%s.%L",
+            "%s.%f",
+            "%s.%N",
+            "%i",
+            "%6",
+            "%9",
+            nullptr,
+        };
+        // A date written as digits, like "20240101.103000" for
+        // "%Y%m%d.%H%M%S", has eight before the dot, while the seconds since
+        // the epoch have had at least nine since 1973.
+        constexpr size_t MIN_EPOCH_DIGITS = 9;
+        const auto int_digits = static_cast<size_t>(
+            std::find(ts_sf.begin(), ts_sf.end(), '.') - ts_sf.begin());
+        const auto is_epoch = int_digits >= MIN_EPOCH_DIGITS
+            && std::all_of(ts_sf.begin(), ts_sf.end(), [](const char ch) {
+                   return isdigit(ch) || ch == '.';
+               });
+        const char* const* time_fmts = is_epoch ? EPOCH_FORMATS : nullptr;
+
+        // The scanner locks onto the first format that matches, but exporters
+        // like Python's isoformat() leave out the fraction when it is zero, so
+        // the rows of one file can have different formats.
+        const auto* last
+            = dts.scan(ts_sf.data(), ts_sf.length(), time_fmts, &tm, tv);
+        if (last == nullptr || last != ts_sf.end()) {
+            const auto ls = dts.unlock();
+            tm = exttm{};
+            last = dts.scan(ts_sf.data(), ts_sf.length(), time_fmts, &tm, tv);
+            if (last == nullptr || last != ts_sf.end()) {
+                dts.relock(ls);
+                return scan_error{fmt::format(
+                    FMT_STRING("metric row timestamp did not parse: {}"),
+                    ts_sf.to_string())};
+            }
         }
         dst.back().set_time(to_us(tv));
         // Propagate what the scanner learned (zone offset, subsecond

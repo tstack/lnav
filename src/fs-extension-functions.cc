@@ -236,6 +236,7 @@ sql_source_find_file(const char* path)
     auto found
         = static_cast<std::string>(lnav_rs_ext::try_find_src_file(path, busy));
     if (busy) {
+        lnav::set_pending_error_type(lnav::ERR_BUSY);
         throw sqlite_func_error(
             "the source is being scanned (:add-source-path); files can be "
             "found once that's done");

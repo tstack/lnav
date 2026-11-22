@@ -1496,6 +1496,7 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                     fc.fc_file_names.insert2(fn, loo);
                     retval = "info: watching -- " + fn;
                 } else {
+                    const auto stat_errno = errno;
                     auto um = lnav::console::user_message::error(
                                   attr_line_t("cannot open file: ")
                                       .append(lnav::roles::file(fn)))
@@ -1505,6 +1506,9 @@ com_open(exec_context& ec, std::string cmdline, std::vector<std::string>& args)
                                       "make sure the file exists and is "
                                       "accessible")
                                   .move();
+                    if (stat_errno == ENOENT) {
+                        um.with_error_type(lnav::ERR_FILE_NOT_FOUND);
+                    }
                     return Err(um);
                 }
             } else if (is_dev_null(st)) {

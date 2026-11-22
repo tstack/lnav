@@ -557,3 +557,35 @@ run_cap_test ${lnav_test} -n \
     -c ':goto 5' \
     ${test_dir}/logfile_json_metrics.json \
     ${test_dir}/logfile_metrics_interleaved.0
+
+# Timestamps from Python's isoformat() leave out the fraction when it is
+# zero.  Each row is still its own message, rather than a continuation of
+# the row before it, and all of them are shown with the fraction.
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_metrics_subsec_mixed.csv
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_time, metric, value FROM all_metrics ORDER BY log_line" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metrics_subsec_mixed.csv
+
+# Timestamps that are a number of seconds or milliseconds since the epoch.
+run_cap_test ${lnav_test} -n \
+    ${test_dir}/logfile_metrics_epoch.csv
+
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_time, metric, value FROM all_metrics ORDER BY log_line, metric" \
+    -c ':write-csv-to -' \
+    ${test_dir}/logfile_metrics_epoch_ms.csv
+
+# A merged row only has the samples of the lines that are shown: those of a
+# hidden file or of lines hidden by a filter are left out.
+run_cap_test ${lnav_test} -n \
+    -c ":hide-file ${test_dir}/logfile_metrics2.csv" \
+    ${test_dir}/logfile_metrics.csv \
+    ${test_dir}/logfile_metrics2.csv
+
+run_cap_test ${lnav_test} -n \
+    -c ":filter-out ^2026-04-14T10:00:05Z,7," \
+    ${test_dir}/logfile_metrics.csv \
+    ${test_dir}/logfile_metrics2.csv

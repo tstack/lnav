@@ -1455,8 +1455,13 @@ lnav::logfile_enable_caches(
 void
 logfile::set_base_time_for(scan_batch_context& sbc, const line_info& li)
 {
+    // The piper line timestamp has already been shifted to local time by the
+    // line_buffer, so convert it back to UTC to match the other sources.
     time_t file_time = li.li_timestamp.tv_sec != 0
-        ? li.li_timestamp.tv_sec
+        ? lnav::to_sys_time(date::local_seconds{std::chrono::seconds{
+                                li.li_timestamp.tv_sec}})
+              .time_since_epoch()
+              .count()
         : this->lf_line_buffer.get_file_time();
     auto anchor = anchor_time_t{embedded_file_time{}};
 
@@ -2154,7 +2159,42 @@ logfile::process_prefix(shared_buffer_ref& sbr,
     }
 
     if (prescan_size < this->lf_index.size()) {
-        if (record_line_ids) {
+        if (record_line_ids && this->lf_index[prescan_size].is_continued()) {
+            // A line of a tabular row whose quoted cell spans lines.  The ids
+            // can be in a cell after the one that spans, so they belong to
+            // the row from its first line.
+            if (sbc.sbc_line_tid || sbc.sbc_line_opid) {
+                auto row_start = prescan_size;
+                while (row_start > 0
+                       && this->lf_index[row_start].is_continued())
+                {
+                    row_start -= 1;
+                }
+                // The thread id and opid can be on different lines of the
+                // row, so the one this line doesn't have is kept.
+                const auto row_id = [row_start](const line_id_runs& runs,
+                                                const std::optional<string_key>&
+                                                    line_id) {
+                    if (line_id) {
+                        return line_id;
+                    }
+                    const auto* prev = runs.get(row_start);
+                    return prev != nullptr && prev->is_valid()
+                        ? std::make_optional(*prev)
+                        : std::optional<string_key>{};
+                };
+                const auto tid
+                    = row_id(this->lf_line_ids.li_tids, sbc.sbc_line_tid);
+                const auto opid
+                    = row_id(this->lf_line_ids.li_opids, sbc.sbc_line_opid);
+                this->lf_line_ids.truncate(row_start);
+                this->lf_line_ids.record(
+                    row_start, this->lf_index.size(), tid, opid);
+            } else {
+                this->lf_line_ids.continue_to(prescan_size,
+                                              this->lf_index.size());
+            }
+        } else if (record_line_ids) {
             // Every entry the message added (a JSON message's rendered
             // lines) belongs to it.
             this->lf_line_ids.record(prescan_size,
@@ -2344,6 +2384,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         size_t begin_size = this->lf_index.size();
         off_t begin_index_size = this->lf_index_size;
         size_t rollback_size = 0, rollback_index_start = 0;
+        std::vector<std::pair<std::chrono::microseconds, log_level_t>>
+            rolled_back_lines;
 
         // Bracket the read+scan loop with a wall and a thread-CPU
         // clock; the post-loop block at end-of-this-branch folds
@@ -2360,35 +2402,52 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
 
         if (!this->lf_index.empty()) {
-            off = this->lf_index.back().get_offset();
-
             /*
              * Drop the last line we read since it might have been a partial
              * read.
              */
+            auto first_dropped = this->lf_index.size() - 1;
+            while (first_dropped > 0
+                   && this->lf_index[first_dropped].is_sub_line())
             {
-                // A message that's scanned again gets the format's level, so
-                // the level it got from its statement is taken out of the
-                // level stats first, which are kept for the rescan (or the
-                // line wasn't counted, if it was partial).  The map gives it
-                // its statement's level again.
-                auto first_dropped = this->lf_index.size() - 1;
+                first_dropped -= 1;
+            }
+            if (this->lf_format != nullptr
+                && this->lf_format->lf_file_type
+                    == log_format::file_type_t::TABULAR)
+            {
+                // The lines of a row whose quoted cell spans lines are
+                // scanned together, and a later line can give the earlier
+                // ones their time, so the whole row is scanned again.
                 while (first_dropped > 0
-                       && this->lf_index[first_dropped].is_sub_line())
+                       && this->lf_index[first_dropped].is_continued())
                 {
                     first_dropped -= 1;
                 }
-                if (!this->lf_index[first_dropped].is_continued()) {
-                    this->apply_stmt_level(first_dropped, LEVEL_UNKNOWN);
+                this->lf_format->restart_at_message();
+                // The rescan can give these lines a different time or level,
+                // and they may already be in the LOG view's index.
+                for (auto index = first_dropped; index < this->lf_index.size();
+                     ++index)
+                {
+                    const auto& ll = this->lf_index[index];
+                    rolled_back_lines.emplace_back(ll.get_time<>(),
+                                                   ll.get_msg_level());
                 }
             }
-            while (this->lf_index.back().is_sub_line()) {
-                this->lf_index.pop_back();
-                rollback_size += 1;
+            // A message that's scanned again gets the format's level, so
+            // the level it got from its statement is taken out of the
+            // level stats first, which are kept for the rescan (or the
+            // line wasn't counted, if it was partial).  The map gives it
+            // its statement's level again.
+            if (!this->lf_index[first_dropped].is_continued()) {
+                this->apply_stmt_level(first_dropped, LEVEL_UNKNOWN);
             }
-            this->lf_index.pop_back();
+            off = this->lf_index[first_dropped].get_offset();
+            rollback_size += this->lf_index.size() - first_dropped;
+            this->lf_index.erase(this->lf_index.begin() + first_dropped,
+                                 this->lf_index.end());
             rollback_index_start = this->lf_index.size();
-            rollback_size += 1;
             this->truncate_time_order(rollback_index_start);
             // The re-read message may have more text or lines than before,
             // so its first line is matched again too.
@@ -3078,6 +3137,22 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                      this->lf_filename_as_string.c_str());
             this->close();
             return rebuild_result_t::INVALID;
+        }
+
+        for (size_t lpc = 0; lpc < rolled_back_lines.size()
+             && rollback_index_start + lpc < this->lf_index.size();
+             lpc++)
+        {
+            const auto& ll = this->lf_index[rollback_index_start + lpc];
+            if (ll.get_time<>() != rolled_back_lines[lpc].first
+                || ll.get_msg_level() != rolled_back_lines[lpc].second)
+            {
+                log_debug("%s: rescanned line %zu changed, forcing full sort",
+                          this->lf_filename_as_string.c_str(),
+                          rollback_index_start + lpc);
+                sort_needed = true;
+                break;
+            }
         }
 
         if (sort_needed || begin_size > this->lf_index.size()) {

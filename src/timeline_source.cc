@@ -806,6 +806,23 @@ timeline_source::get_time_bounds_for(int line)
     auto low_us = low_row.or_value.otr_range.tr_begin;
     auto high_us = high_row.or_value.otr_range.tr_begin;
 
+    // The window goes from the first to the last start of the rows on the
+    // screen, so a long row does not squeeze the others.  But when the rows
+    // start at about the same time, like the rows for files, that window is
+    // too narrow to show any of them, so it is made at least as wide as the
+    // shortest of them.
+    std::optional<std::chrono::microseconds> shortest;
+    for (auto index = low_index; index <= high_index; ++index) {
+        const auto row_duration
+            = this->ts_time_order[index]->or_value.otr_range.duration();
+        if (row_duration > 0us && (!shortest || row_duration < shortest)) {
+            shortest = row_duration;
+        }
+    }
+    if (shortest && high_us - low_us < shortest.value()) {
+        high_us = low_us + shortest.value();
+    }
+
     auto duration = high_us - low_us;
     auto span_iter
         = std::upper_bound(TIME_SPANS.begin(), TIME_SPANS.end(), duration);

@@ -9,16 +9,16 @@
         "description": "Log files written by the Asterisk PBX framework (e.g. /var/log/asterisk/full and messages) and saved console output.",
         "regex": {
             "std": {
-                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>\\w+)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?:? (?<src_file>[^:\\s]+)(?::(?<src_line>\\d+) (?<function>\\w+))?: ?(?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>\\w+)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?:? (?<src_file>[^:\\s]+)(?::(?<src_line>\\d+) (?<function>\\w+))?:\\s*(?<body>.*)$"
             },
             "dialplan": {
-                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>\\w+)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?:? Ext\\. (?<exten>[^:]*)(?::(?<priority>\\d+) @ (?<context>[^:]+))?: ?(?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>\\w+)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?:? Ext\\. (?<exten>[^:]*)(?::(?<priority>\\d+) @ (?<context>[^:]+))?:\\s*(?<body>.*)$"
             },
             "nofile": {
-                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>\\w+)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?(?: :|:(?! ?(?:Ext\\. [^:]*|[^:\\s]+):)) (?: *\\d+ +(?:(?:-->|<--) +)?(?<src_file>[^:\\s]+):(?<src_line>\\d+) (?<function>\\w+): )?(?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] (?<level>\\w+)\\[(?<tid>\\d+)\\](?:\\[(?<callid>C-[0-9a-fA-F]+)\\])?(?: :|:(?! ?(?:Ext\\. [^:]*|[^:\\s]+):)) (?: *\\d+ +(?:(?:-->|<--) +)?(?<src_file>[^:\\s]+):(?<src_line>\\d+) (?<function>\\w+): )?\\s*(?<body>.*)$"
             },
             "version": {
-                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] Asterisk (?<version>[^ ]+)(?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>[^\\]]+)\\] Asterisk (?<version>[^ ]+)\\s*(?<body>.*)$"
             }
         },
         "level": {

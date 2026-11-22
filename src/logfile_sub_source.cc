@@ -390,12 +390,55 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
 
         std::string composed;
         composed.reserve(64 + 24 * this->lss_token_values.lvv_values.size());
-        char ts_buf[64];
-        auto ts_len = sql_strftime(
-            ts_buf, sizeof(ts_buf), this->lss_token_line->get_timeval(), 'T');
-        composed.append(ts_buf, ts_len);
+        // The time of the row, written here instead of rewritten from the
+        // file's text, since the row can be made from lines of several files.
+        // Every row has the same form: the fraction is there if the time of
+        // any open file has one, and the offset if the lead file's times had
+        // a zone and were converted to local time.
+        {
+            const auto tv = this->lss_token_line->get_timeval();
+            struct tm row_tm;
+            gmtime_r(&tv.tv_sec, &row_tm);
+            char ts_buf[64];
+            auto ts_len
+                = strftime(ts_buf, sizeof(ts_buf), "%Y-%m-%dT%H:%M:%S", &row_tm);
+            composed.append(ts_buf, ts_len);
+            const auto all_flags = this->lss_all_timestamp_flags;
+            if (all_flags & (ETF_MICROS_SET | ETF_NANOS_SET)) {
+                fmt::format_to(std::back_inserter(composed),
+                               FMT_STRING(".{:06}"),
+                               tv.tv_usec);
+            } else if (all_flags & ETF_MILLIS_SET) {
+                fmt::format_to(std::back_inserter(composed),
+                               FMT_STRING(".{:03}"),
+                               tv.tv_usec / 1000);
+            }
+            const auto& lead_dts = this->lss_token_file->get_time_scanner();
+            if ((format->lf_timestamp_flags & ETF_ZONE_SET
+                 || lead_dts.dts_default_zone != nullptr)
+                && lead_dts.dts_zoned_to_local)
+            {
+                const auto local_secs
+                    = date::local_seconds{std::chrono::seconds{tv.tv_sec}};
+                const auto offset_mins
+                    = std::chrono::duration_cast<std::chrono::minutes>(
+                          local_secs.time_since_epoch()
+                          - lnav::to_sys_time(local_secs).time_since_epoch())
+                          .count();
+                if (offset_mins == 0) {
+                    composed.push_back('Z');
+                } else {
+                    fmt::format_to(std::back_inserter(composed),
+                                   FMT_STRING("{}{:02}{:02}"),
+                                   offset_mins < 0 ? '-' : '+',
+                                   std::abs(offset_mins) / 60,
+                                   std::abs(offset_mins) % 60);
+                }
+            }
+        }
         this->lss_token_al.al_attrs.emplace_back(
-            line_range{0, static_cast<int>(ts_len)}, L_TIMESTAMP.value());
+            line_range{0, static_cast<int>(composed.size())},
+            L_TIMESTAMP.value());
 
         constexpr size_t MIN_COLUMN_WIDTH = 10;
 
@@ -431,8 +474,13 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             if (retval.mc_number
                 && !src_lf->get_format_ptr()->metrics_are_columns())
             {
+                // Without a unit, the number is shown like a CSV cell is, as
+                // it would be written, rather than padded to two decimals.
                 retval.mc_text = lv.lv_meta.to_humanized_value(
-                    retval.mc_number.value(), humanize::alignment::columnar);
+                    retval.mc_number.value(),
+                    lv.lv_meta.lvm_unit_suffix.empty()
+                        ? humanize::alignment::none
+                        : humanize::alignment::columnar);
             } else if (src_data != nullptr && lv.lv_origin.is_valid()
                        && lv.lv_origin.length() > 0)
             {
@@ -584,7 +632,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             if (display != nullptr) {
                 // One column per entry, in order, so the columns line up
                 // from row to row, with blanks for a metric this row has
-                // no sample of.
+                // no sample of.  An entry for a metric the file has no
+                // samples of at all gets no column.
                 // An entry can match several labeled series of a metric
                 // (cpu[host:a], cpu[host:b]): the file says which go in a
                 // column of their own and which share one.
@@ -613,14 +662,6 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                                   col_width,
                                   cell_format->get_metric_range(
                                       string_fragment::from_str(mdd.mdd_name)));
-                    }
-                    if (columns.empty()) {
-                        emit_cell(cell_lf,
-                                  string_fragment::from_str(mdd.get_label()),
-                                  nullptr,
-                                  nullptr,
-                                  col_width,
-                                  metric_range{});
                     }
                 }
                 continue;
@@ -858,6 +899,7 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
     auto time_attr
         = find_string_attr(this->lss_token_al.al_attrs, &L_TIMESTAMP);
     if (!this->lss_token_line->is_continued() && !format->lf_formatted_lines
+        && !format->lf_is_metric
         && (this->lss_token_file->is_time_adjusted()
             || ((ts_flags & ETF_ZONE_SET
                  || file_dts.dts_default_zone != nullptr)
@@ -1735,28 +1777,49 @@ struct sort_input {
     }
 
     /**
-     * Find the end of the run of lines that sort before the given line.  The
-     * search is bounded below by the next unmerged line since the lines
-     * before it are already in the index and a whole-file search could
-     * otherwise land behind it.
+     * Lines with the same time are ordered by file, so the lines that share a
+     * timestamp come in the same order of files every time.  That keeps the
+     * metric rows that are folded together in the same order, with the same
+     * lead, on every line.  Within a file, the order is the file's own.
      */
-    size_t find_run_end(const logline& limit) const
+    bool sorts_before(const sort_input& other) const
+    {
+        const auto lhs_time = this->next().get_time<>();
+        const auto rhs_time = other.next().get_time<>();
+
+        if (lhs_time != rhs_time) {
+            return lhs_time < rhs_time;
+        }
+        return this->si_file_data->ld_file_index
+            < other.si_file_data->ld_file_index;
+    }
+
+    /**
+     * Find the end of the run of lines that sort before the next line of the
+     * other input.  The search is bounded below by the next unmerged line
+     * since the lines before it are already in the index and a whole-file
+     * search could otherwise land behind it.
+     */
+    size_t find_run_end(const sort_input& other) const
     {
         const auto begin = this->si_file_ptr->begin();
+        const auto limit_time = other.next().get_time<>();
+        // The lines at the limit's time come first if this file does.
+        const auto take_ties = this->si_file_data->ld_file_index
+            < other.si_file_data->ld_file_index;
         size_t retval;
 
         // Galloping rather than bisecting: the more the files overlap, the
         // shorter each run is and the more often this is called, so the cost
         // should scale with the length of the run and not with what is left
         // of the file.
-        //
-        // The bound is by time alone, so walk over the lines that share the
-        // limit's timestamp but still sort before it.
         if (this->si_order == nullptr) {
             auto iter = lnav::gallop_lower_bound(begin + this->next_pos(),
                                                  this->si_file_ptr->end(),
-                                                 limit.get_time());
-            while (iter != this->si_file_ptr->end() && *iter < limit) {
+                                                 limit_time);
+            while (take_ties && iter != this->si_file_ptr->end()
+                   && iter->get_time<>() == limit_time)
+            {
                 ++iter;
             }
             retval = std::distance(begin, iter);
@@ -1765,18 +1828,20 @@ struct sort_input {
             const auto* iter = lnav::gallop_lower_bound(
                 this->si_order + this->next_pos(),
                 order_end,
-                limit.get_time(),
+                limit_time,
                 [begin](uint32_t index, std::chrono::microseconds rhs) {
                     return begin[index] < rhs;
                 });
-            while (iter != order_end && begin[*iter] < limit) {
+            while (take_ties && iter != order_end
+                   && begin[*iter].get_time<>() == limit_time)
+            {
                 ++iter;
             }
             retval = std::distance(this->si_order, iter);
         }
         if (retval == this->next_pos()) {
-            // The heads compare equal, so consume a single line to guarantee
-            // that the merge makes progress.
+            // Consume a single line to guarantee that the merge makes
+            // progress.
             retval += 1;
         }
         return retval;
@@ -1784,7 +1849,7 @@ struct sort_input {
 
     bool operator<(const sort_input& other) const
     {
-        return other.next() < this->next();
+        return other.sorts_before(*this);
     }
 };
 
@@ -2245,8 +2310,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
             const auto run_start = next_si.next_pos();
             const auto run_end = sort_inputs.size() == 1
                 ? next_si.end_pos()
-                : next_si.find_run_end(
-                      sort_inputs[sort_inputs.size() - 2].next());
+                : next_si.find_run_end(sort_inputs[sort_inputs.size() - 2]);
 
             if (next_si.si_order == nullptr) {
                 append_run(
@@ -2270,7 +2334,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                      ++si_iter)
                 {
                     auto prev_si_iter = std::prev(si_iter);
-                    if (prev_si_iter->next() < si_iter->next()) {
+                    if (prev_si_iter->sorts_before(*si_iter)) {
                         break;
                     }
                     std::swap(*si_iter, *prev_si_iter);
@@ -5159,12 +5223,17 @@ logfile_sub_source::row_is_filtered_out(size_t idx,
         return true;
     }
     auto line_iter = (*ld)->get_file_ptr()->begin() + line_number;
-    return !this->check_filters(ld,
-                                line_iter,
-                                line_number,
-                                filter_in_mask,
-                                filter_out_mask,
-                                this->is_msg_marked(ld, line_iter));
+    // check_filters() counts the lines hidden by the minimum level, which
+    // is only meant to happen while the filtered index is being built.
+    const auto level_filtered_count = this->tss_level_filtered_count;
+    const auto retval = !this->check_filters(ld,
+                                             line_iter,
+                                             line_number,
+                                             filter_in_mask,
+                                             filter_out_mask,
+                                             this->is_msg_marked(ld, line_iter));
+    this->tss_level_filtered_count = level_filtered_count;
+    return retval;
 }
 
 std::optional<vis_line_t>

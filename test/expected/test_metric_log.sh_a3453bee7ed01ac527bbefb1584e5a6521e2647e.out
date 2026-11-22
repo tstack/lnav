@@ -1,3 +1,3 @@
-2026-11-17T06:00:00.000000  cpu.pct=[7m    [0m  7.25  mem.used{host=a}=[7m [0m     1024  mem.used{host=b}=[7m [0m     2048  queue.depth=[7m [0m        3
-2026-11-17T06:00:10.000000  cpu.pct=[7m     12.50[0m  mem.used{host=a}=[7m      1100[0m  queue.depth=[7m         5[0m
-2026-11-17T06:00:20.000000  cpu.pct=[7m [0m        3  mem.used{host=a}=[7m      1100[0m  mem.used{host=b}=[7m      2100[0m  queue.depth=[7m [0m        3
+2026-11-17T06:00:00Z  cpu.pct=[7m    [0m  7.25  mem.used{host=a}=[7m [0m     1024  mem.used{host=b}=[7m [0m     2048  queue.depth=[7m [0m        3
+2026-11-17T06:00:10Z  cpu.pct=[7m      12.5[0m  mem.used{host=a}=[7m      1100[0m  queue.depth=[7m         5[0m
+2026-11-17T06:00:20Z  cpu.pct=[7m [0m        3  mem.used{host=a}=[7m      1100[0m  mem.used{host=b}=[7m      2100[0m  queue.depth=[7m [0m        3

@@ -6,7 +6,10 @@
         "url": "https://www.x.org/releases/current/doc/man/man1/Xorg.1.xhtml",
         "regex": {
             "std": {
-                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?|\\s*\\d+\\.\\d{3})\\] (?:\\((?<level>EE|WW|II|NI|!!|--|\\*\\*|==|\\+\\+|\\?\\?)\\) )?(?:(?<driver>[\\w-]+)\\((?<screen>[^)\\s]+)\\): )?(?<body>.*)$"
+                "pattern": "^\\[(?<timestamp>\\s*\\d+\\.\\d{3})\\] (?:\\((?<level>EE|WW|II|NI|!!|--|\\*\\*|==|\\+\\+|\\?\\?)\\) )?(?:(?<driver>[\\w-]+)\\((?<screen>[^)\\s]+)\\): )?(?<body>.*)$"
+            },
+            "wall-clock": {
+                "pattern": "^\\[(?<timestamp>\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?)\\] \\((?<level>EE|WW|II|NI|!!|--|\\*\\*|==|\\+\\+|\\?\\?)\\) (?:(?<driver>[\\w-]+)\\((?<screen>[^)\\s]+)\\): )?(?<body>.*)$"
             }
         },
         "timestamp-format": [

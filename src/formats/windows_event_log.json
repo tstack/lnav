@@ -2,7 +2,7 @@
     "$schema": "https://lnav.org/schemas/format-v1.schema.json",
     "windows_event_log": {
         "title": "Windows Event Log (PowerShell CSV)",
-        "description": "Windows event log exported via `Get-WinEvent | Export-Csv -NoTypeInformation`. Multi-line `Message` cells need to be flattened to a single line before export, e.g. `Get-WinEvent ... | Select-Object *, @{n='Message';e={$_.Message -replace '[\\r\\n]+',' '}} -ExcludeProperty Message | Export-Csv ...`.",
+        "description": "Windows event log exported via `Get-WinEvent | Export-Csv -NoTypeInformation`.",
         "url": "https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.diagnostics/get-winevent",
         "file-type": "tabular",
         "timestamp-field": "TimeCreated",

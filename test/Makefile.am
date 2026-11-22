@@ -435,6 +435,9 @@ dist_noinst_DATA = \
 	logfile_metrics_colmismatch.csv \
 	logfile_metrics_colmismatch_late.csv \
 	logfile_metrics_mixed.csv \
+	logfile_metrics_epoch.csv \
+	logfile_metrics_epoch_ms.csv \
+	logfile_metrics_subsec_mixed.csv \
 	logfile_metrics_quoted.csv \
 	logfile_metrics_textonly.csv \
 	logfile_metrics_unordered.csv \
@@ -519,6 +522,7 @@ dist_noinst_DATA = \
 	logfile_win_events_extras.csv \
 	logfile_win_events_extras_quotes.csv \
 	logfile_win_events_multiline.csv \
+	logfile_win_events_message_first.csv \
 	logfile_win_events_quoted_hdr.csv \
 	logfile_win_events_quotes.csv \
 	logfile_with_a_really_long_name_to_test_a_bug_with_long_names.0 \

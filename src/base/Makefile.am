@@ -36,6 +36,7 @@ noinst_HEADERS = \
     date_time_scanner.cfg.hh \
     date_time_scanner.hh \
     distributed_slice.hh \
+    error_type.hh \
     enum_util.hh \
     file_range.hh \
     from_trait.hh \
@@ -102,6 +103,7 @@ libbase_a_SOURCES = \
     date_time_scanner.cc \
     fs_util.cc \
     fs_util.glob_match.cc \
+    error_type.cc \
     fts_fuzzy_match.cc \
 	humanize.cc \
 	humanize.network.cc \

@@ -369,6 +369,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                 tc_tss->tss_context_after += 1;
                 tc_tss->text_filters_changed();
                 tc->reload_data();
+                lnav_data.ld_filter_status_source.update_filtered(tc_tss);
+                lnav_data.ld_status[LNS_FILTER].set_needs_update();
                 prompt.p_editor.set_inactive_value(fmt::format(
                     FMT_STRING("filter context: {} before, {} after"),
                     tc_tss->tss_context_before,
@@ -399,6 +401,8 @@ DELETE FROM lnav_user_notifications WHERE id = 'org.lnav.mouse-support'
                     }
                     tc_tss->text_filters_changed();
                     tc->reload_data();
+                    lnav_data.ld_filter_status_source.update_filtered(tc_tss);
+                    lnav_data.ld_status[LNS_FILTER].set_needs_update();
                     prompt.p_editor.set_inactive_value(fmt::format(
                         FMT_STRING("filter context: {} before, {} after"),
                         tc_tss->tss_context_before,

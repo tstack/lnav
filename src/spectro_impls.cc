@@ -599,6 +599,12 @@ db_spectro_value_source::update_stats()
                                      .append("SELECT"_keyword)
                                      .append(" statement"))
                       .move();
+        } else if (dls.dls_time_column_index != SIZE_MAX) {
+            this->dsvs_error_msg
+                = lnav::console::user_message::error(
+                      "Cannot generate spectrogram for database results")
+                      .with_reason("the query did not return any rows")
+                      .move();
         } else {
             this->dsvs_error_msg
                 = lnav::console::user_message::error(
@@ -611,13 +617,16 @@ db_spectro_value_source::update_stats()
                       .with_note(
                           attr_line_t("An ascending ")
                               .append_quoted("log_time"_variable)
+                              .append(", ")
+                              .append_quoted("log_time_msecs"_variable)
+                              .append(", or ")
+                              .append_quoted("log_time_usecs"_variable)
                               .append(
                                   " column is needed to render a spectrogram"))
                       .with_help(
-                          attr_line_t("Include a ")
-                              .append_quoted("log_time"_variable)
-                              .append(" column in your ")
-                              .append(" statement. Use an ")
+                          attr_line_t("Include one of those columns in your ")
+                              .append("SELECT"_keyword)
+                              .append(" statement.  Use an ")
                               .append("AS"_keyword)
                               .append(
                                   " directive to alias a computed timestamp"))

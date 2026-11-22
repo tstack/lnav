@@ -1076,6 +1076,9 @@ struct PollResult final {
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecError
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecError
 struct ExecError final {
+  // The name of the error's type, so a client can tell the errors
+  // apart; see the error_type rows of the lnav_help table.
+  ::rust::String error_type;
   ::rust::String msg;
   ::rust::String reason;
   ::rust::String help;
@@ -1087,6 +1090,9 @@ struct ExecError final {
 #ifndef CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult
 #define CXXBRIDGE1_STRUCT_lnav_rs_ext$ExecResult
 struct ExecResult final {
+  // The HTTP status for an error, from the error's type.  Zero leaves
+  // it to the server.
+  ::std::uint16_t http_status CXX_DEFAULT_VALUE(0);
   ::rust::String status;
   ::rust::String content_type;
   ::std::int32_t content_fd CXX_DEFAULT_VALUE(0);

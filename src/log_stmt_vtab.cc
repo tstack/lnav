@@ -231,6 +231,7 @@ rcFilter(sqlite3_vtab_cursor* pVtabCursor,
     auto busy = false;
     auto stmts = lnav_rs_ext::try_get_log_statements_for(path, busy);
     if (busy) {
+        lnav::set_pending_error_type(lnav::ERR_BUSY);
         pVtabCursor->pVtab->zErrMsg = sqlite3_mprintf(
             "the source is being scanned (:add-source-path); its log statements "
             "are available once that's done");

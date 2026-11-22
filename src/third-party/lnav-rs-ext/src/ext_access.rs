@@ -253,7 +253,12 @@ fn do_exec(request: &Request) -> Response {
         let file = File::from(fd);
         Response::from_file(res.content_type, file)
     } else {
-        Response::json(&res.error).with_status_code(500)
+        let status = if res.http_status == 0 {
+            500
+        } else {
+            res.http_status
+        };
+        Response::json(&res.error).with_status_code(status)
     }
 }
 

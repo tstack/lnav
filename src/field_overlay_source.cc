@@ -593,6 +593,9 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
     // of what the composed line renders.  When the metrics are not
     // columns, every sibling has the same columns as the lead, so its
     // fields would only repeat them.
+    // The values from each sibling, by the index of the first one, so their
+    // stats are looked up in the file they came from.
+    std::vector<std::pair<size_t, const logfile*>> sibling_value_files;
     if (format->lf_is_metric && format->metrics_are_columns()) {
         logline_window::logmsg_info lead_msg{this->fos_lss, vis_line_t(row)};
         bool first = true;
@@ -605,9 +608,20 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
             }
             auto& target = this->fos_log_helper.ldh_line_values.lvv_values;
             const auto& sib_values = sib.get_values().lvv_values;
+            sibling_value_files.emplace_back(target.size(), sib.get_file_ptr());
             target.insert(target.end(), sib_values.begin(), sib_values.end());
         }
     }
+    const auto file_for_value = [this, &sibling_value_files](size_t index) {
+        const logfile* retval = this->fos_log_helper.ldh_file.get();
+        for (const auto& [start, lf] : sibling_value_files) {
+            if (index < start) {
+                break;
+            }
+            retval = lf;
+        }
+        return retval;
+    };
     auto anchor_opt = this->fos_lss.anchor_for_row(row);
     if (anchor_opt) {
         auto permalink
@@ -750,7 +764,11 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
 
     const log_format* last_format = nullptr;
 
-    for (const auto& lv : this->fos_log_helper.ldh_line_values.lvv_values) {
+    const auto& line_values = this->fos_log_helper.ldh_line_values.lvv_values;
+    for (size_t value_index = 0; value_index < line_values.size();
+         value_index++)
+    {
+        const auto& lv = line_values[value_index];
         const auto& meta = lv.lv_meta;
         if (!meta.lvm_format) {
             continue;
@@ -878,7 +896,7 @@ field_overlay_source::build_field_lines(const listview_curses& lv,
         // distinct count.  Both render in the column's unit if one is
         // declared, mirroring the value's own formatting above.
         const logline_value_stats* stats = nullptr;
-        const auto* curr_lf = this->fos_log_helper.ldh_file.get();
+        const auto* curr_lf = file_for_value(value_index);
         if (curr_lf != nullptr) {
             stats = curr_lf->stats_for_value(meta.lvm_name);
         }

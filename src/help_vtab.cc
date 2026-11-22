@@ -38,6 +38,7 @@
  * without the docs.
  */
 
+#include <algorithm>
 #include <set>
 #include <string>
 #include <vector>
@@ -48,12 +49,15 @@
 #include "base/lnav_log.hh"
 #include "base/string_util.hh"
 #include "bound_tags.hh"
+#include "environ_vtab.hh"
 #include "fmt/format.h"
 #include "help_text.hh"
 #include "help_text_formatter.hh"
 #include "lnav.hh"
+#include "log_vtab_impl.hh"
 #include "mapbox/variant.hpp"
 #include "sql_help.hh"
+#include "static_file_vtab.hh"
 #include "vtab_module.hh"
 #include "vtab_module_json.hh"
 #include "yajlpp/yajlpp.hh"
@@ -67,8 +71,10 @@ struct help_entry_row {
     std::vector<std::string> her_aliases;
 };
 
-// One of lnav's own tables, whose row comes from its DDL.
+// One of lnav's own tables, whose row comes from its DDL, or one of the
+// kinds of errors that a user_message can be marked with.
 struct help_table_row {
+    const char* htr_kind;
     std::string htr_name;
     std::string htr_summary;
     std::vector<std::string> htr_tags;
@@ -325,12 +331,12 @@ struct lnav_help : tvt_iterator_cursor<lnav_help> {
 --   SELECT name, synopsis, summary FROM lnav_help WHERE json_contains(tags, 'filtering')
 -- Tags: scripting
 CREATE TABLE lnav_db.lnav_help (
-    kind TEXT,         -- The kind of entry: command, table, sql_function, sql_aggregate_function, sql_table_function, sql_command, sql_keyword, sql_infix, prql_transform, or prql_function.
+    kind TEXT,         -- The kind of entry: command, table, sql_function, sql_aggregate_function, sql_table_function, sql_command, sql_keyword, sql_infix, prql_transform, prql_function, or error_type.
     name TEXT,         -- The name to call it by; commands start with a colon (e.g. ':filter-out').
     effect TEXT,       -- For a command or SQL dot-command, what running it can change: read (nothing, though it may print to the script's output), output (writes to the file it's given, or with '-' to the script's output), view (lnav's state for this session, such as views, filters, marks, and the files shown), config (configuration or session files), external (runs programs, reads or writes other files, or opens connections), exit (quits lnav), or unknown (not declared; treat it like external).
     aliases TEXT,      -- A JSON array of other names for the same entry.
     summary TEXT,      -- A one-line summary.
-    synopsis TEXT,     -- How to call it, as plain text; for a table, its CREATE TABLE statement with a comment on each column.
+    synopsis TEXT,     -- How to call it, as plain text; for a table, its CREATE TABLE statement with a comment on each column; for an error_type, the HTTP status of a request that fails with it.
     description TEXT,  -- Further detail, when there is more than the summary.
     parameters TEXT,   -- A JSON array of the parameters, each an object with name, summary, nargs (required, optional, zero_or_more, one_or_more), format, and optionally flag, default, enum, and nested parameters.
     examples TEXT,     -- A JSON array of examples, each an object with description, code, and language (default or prql).
@@ -395,12 +401,67 @@ CREATE TABLE lnav_db.lnav_help (
         for (const auto& [name, ddl] : vtab_module_ddls) {
             auto tags_iter = vtab_module_tags.find(name);
             retval.emplace_back(help_table_row{
+                "table",
                 name.to_string(),
                 table_summary(ddl),
                 tags_iter != vtab_module_tags.end()
                     ? tags_iter->second
                     : std::vector<std::string>{},
                 ddl,
+            });
+        }
+
+        // The tables that aren't made by vtab_module, whose DDL comes from
+        // elsewhere, as in the SCHEMA view.  The tables of the log formats
+        // are left out: there are dozens of them, and lnav_format_values
+        // describes their columns.  The logline table's columns change with
+        // the focused message, so it is left out too.
+        auto add_table = [&retval](const char* name,
+                                   const std::string& summary,
+                                   const std::string& ddl,
+                                   std::vector<std::string> tags) {
+            const auto trimmed = trim(ddl);
+            retval.emplace_back(help_table_row{
+                "table",
+                name,
+                summary.empty() ? table_summary(trimmed) : summary,
+                std::move(tags),
+                trimmed,
+            });
+        };
+        add_table("environ", "", ENVIRON_CREATE_STMT, {"scripting"});
+        add_table(
+            "lnav_app_files", "", STATIC_FILE_CREATE_STMT, {"scripting"});
+        auto* vtab_manager = injector::get<log_vtab_manager*>();
+        auto all_logs
+            = vtab_manager->lookup_impl(intern_string::lookup("all_logs"));
+        if (all_logs != nullptr) {
+            add_table("all_logs",
+                      "The messages from every file in the LOG view, with the "
+                      "columns that every log format has",
+                      all_logs->get_table_statement(),
+                      {"vtables"});
+        }
+
+        // The kinds of errors, whose names are the "type" of an error from
+        // the external-access server.  The slice is in link order, so they
+        // are sorted for a stable listing.
+        std::vector<const lnav::error_type_t*> error_types;
+        for (const auto& et : lnav::error_type_t::get_all_types()) {
+            error_types.emplace_back(&et);
+        }
+        std::sort(error_types.begin(),
+                  error_types.end(),
+                  [](const auto* lhs, const auto* rhs) {
+                      return lhs->get_name() < rhs->get_name();
+                  });
+        for (const auto* et : error_types) {
+            retval.emplace_back(help_table_row{
+                "error_type",
+                et->get_name().to_string(),
+                et->get_description().to_string(),
+                {"scripting"},
+                fmt::format(FMT_STRING("HTTP {}"), et->get_http_status()),
             });
         }
 
@@ -524,7 +585,7 @@ CREATE TABLE lnav_db.lnav_help (
     {
         switch (col) {
             case 0:
-                to_sqlite(ctx, "table");
+                to_sqlite(ctx, row.htr_kind);
                 break;
             case 1:
                 to_sqlite(ctx, row.htr_name);

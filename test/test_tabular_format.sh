@@ -203,6 +203,14 @@ run_cap_test ${lnav_test} -n \
     -c ':write-json-to -' \
     ${test_dir}/logfile_win_events_multiline.csv
 
+# Export-Csv puts the Message first, so the time and level of an event are on
+# the last line of a multi-line message.  The message can also have blank
+# lines and doubled quotes.
+run_cap_test ${lnav_test} -n \
+    -c ";SELECT log_line, log_time, log_level, log_opid, log_msg_line_count, log_body FROM windows_event_log ORDER BY log_line" \
+    -c ':write-json-to -' \
+    ${test_dir}/logfile_win_events_message_first.csv
+
 # UTF-8 BOM at the start of the CSV (Excel exports do this).  The BOM
 # bytes are silently consumed upstream and `when` still binds — pin
 # down so a regression that breaks BOM handling is visible.

@@ -247,7 +247,9 @@ bottom_status_source::update_marks(listview_curses* lc)
                     .append(count_al)
                     .append(" for ");
             } else {
-                al.append("  ").append(count_al).append(" hits for ");
+                al.append("  ")
+                    .append(count_al)
+                    .append(hit_count == 1 ? " hit for " : " hits for ");
             }
             if (sf.set_value(al) || emphasize != this->bss_hit_count_bold) {
                 // set_value() only compares the text, so a change in just

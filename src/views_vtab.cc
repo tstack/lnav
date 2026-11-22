@@ -996,6 +996,8 @@ CREATE TABLE lnav_db.lnav_views (
                 fc_tss->tss_context_after = after;
                 fc_tss->text_filters_changed();
                 tc.reload_data();
+                lnav_data.ld_filter_status_source.update_filtered(fc_tss);
+                lnav_data.ld_status[LNS_FILTER].set_needs_update();
             }
         }
         if (!vo.vo_row_types.empty()) {

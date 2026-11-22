@@ -524,9 +524,10 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
         std::set<std::string> touched_tables;
         {
             sql_table_capture_guard capture_guard(touched_tables);
-            // Forget a refusal from SQL compiled elsewhere, e.g. by
-            // :filter-expr, so it isn't reported for this statement.
+            // Forget a refusal or an error type from SQL run elsewhere, e.g.
+            // by :filter-expr, so it isn't reported for this statement.
             lnav::sql::take_external_denial();
+            lnav::take_pending_error_type();
             retcode = sqlite3_prepare_v2(
                 lnav_data.ld_db.in(), curr_stmt, -1, stmt.out(), &tail);
         }
@@ -561,6 +562,10 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
             }
 
             um.with_snippet(lnav::console::snippet::from(loc, annotated_sql));
+            const auto* pending_type = lnav::take_pending_error_type();
+            if (pending_type != nullptr) {
+                um.with_error_type(*pending_type);
+            }
 
             return Err(um);
         }
@@ -666,6 +671,12 @@ execute_sql(exec_context& ec, const std::string& sql, std::string& alt_msg)
                     auto um = sqlite3_error_to_user_message(lnav_data.ld_db,
                                                             bound_note)
                                   .move();
+                    // An SQL function or table that failed in a way a client
+                    // can act on, like being busy, said so here.
+                    const auto* pending_type = lnav::take_pending_error_type();
+                    if (pending_type != nullptr) {
+                        um.with_error_type(*pending_type);
+                    }
 
                     if (ec.get_provenance<exec_context::keyboard_input>()
                         || ec.get_provenance<exec_context::mouse_input>())
@@ -896,6 +907,8 @@ execute_file(exec_context& ec, const std::string& path_and_args)
     auto script_name = split_args[0].se_value;
     auto& vars = ec.ec_local_vars.top();
     std::string star, open_error = "file not found";
+    // Whether the script was looked for and not found, and not unreadable.
+    auto not_found = true;
 
     add_ansi_vars(vars);
 
@@ -977,6 +990,7 @@ execute_file(exec_context& ec, const std::string& path_and_args)
             paths_to_exec.push_back(meta);
         } else if (errno != ENOENT) {
             open_error = lnav::from_errno().message();
+            not_found = false;
         } else {
             auto script_path = std::filesystem::path(script_name);
 
@@ -998,6 +1012,7 @@ execute_file(exec_context& ec, const std::string& path_and_args)
                 paths_to_exec.push_back(meta);
             } else if (errno != ENOENT) {
                 open_error = lnav::from_errno().message();
+                not_found = false;
             }
         }
     }
@@ -1017,8 +1032,12 @@ execute_file(exec_context& ec, const std::string& path_and_args)
     }
 
     if (paths_to_exec.empty()) {
-        return ec.make_error(
+        auto um = ec.make_error_msg(
             "unknown script -- {} -- {}", script_name, open_error);
+        if (not_found) {
+            um.with_error_type(lnav::ERR_FILE_NOT_FOUND);
+        }
+        return Err(um);
     }
 
     return Ok(retval);
@@ -1567,6 +1586,12 @@ exec_context::allows_effect(help_effect_t effect) const
     return this->ec_allowed_effects->is_set(effect);
 }
 
+const DIST_SLICE(error_types) lnav::error_type_t ERR_EFFECT_REFUSED(
+    "effect-refused",
+    403,
+    "A command or SQL statement would have an effect that the "
+    "X-Lnav-Allow-Effects header of the request does not allow");
+
 Result<void, lnav::console::user_message>
 exec_context::check_effect(help_effect_t effect,
                            const std::string& what,
@@ -1603,6 +1628,7 @@ exec_context::check_effect(help_effect_t effect,
                       "the X-Lnav-Allow-Effects header of an external-access "
                       "request lists the effects its commands may have; see "
                       "the effect column of the lnav_help table")
+                  .with_error_type(ERR_EFFECT_REFUSED)
                   .move();
     if (!this->ec_source.empty()) {
         um.with_snippets(this->ec_source);

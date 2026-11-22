@@ -1,4 +1,4 @@
-2026-11-17T06:00:00.000000  cpu=[7m [0m       10  mem{host=a}=[7m [0m      100  mem{host=b}=[7m [0m      200  requests[cc:a]=            requests[cc:b]=          
-2026-11-17T06:00:10.000000  cpu=[7m  [0m      20  mem{host=a}=[7m   [0m    110  mem{host=b}=[7m   [0m    210  requests[cc:a]=[7m         3[0m  requests[cc:b]=          
-2026-11-17T06:00:20.000000  cpu=[7m   [0m     30  mem{host=a}=[7m       [0m120  mem{host=b}=[7m       [0m220  requests[cc:a]=            requests[cc:b]=[7m [0m        3
-2026-11-17T06:00:30.000000  cpu=[7m    [0m    40  mem{host=a}=[7m       130[0m  mem{host=b}=[7m       230[0m  requests[cc:a]=            requests[cc:b]=[7m         5[0m
+2026-11-17T06:00:00Z  cpu=[7m [0m       10  mem{host=a}=[7m [0m      100  mem{host=b}=[7m [0m      200  requests[cc:a]=            requests[cc:b]=          
+2026-11-17T06:00:10Z  cpu=[7m  [0m      20  mem{host=a}=[7m   [0m    110  mem{host=b}=[7m   [0m    210  requests[cc:a]=[7m         3[0m  requests[cc:b]=          
+2026-11-17T06:00:20Z  cpu=[7m   [0m     30  mem{host=a}=[7m       [0m120  mem{host=b}=[7m       [0m220  requests[cc:a]=            requests[cc:b]=[7m [0m        3
+2026-11-17T06:00:30Z  cpu=[7m    [0m    40  mem{host=a}=[7m       130[0m  mem{host=b}=[7m       230[0m  requests[cc:a]=            requests[cc:b]=[7m         5[0m

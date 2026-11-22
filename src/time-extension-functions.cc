@@ -569,6 +569,32 @@ is_sql_number(sqlite3_value* val)
     return type == SQLITE_INTEGER || type == SQLITE_FLOAT;
 }
 
+/**
+ * A time argument of time_buckets(): milliseconds from the epoch, like
+ * log_time_msecs, or a timestamp, like log_time.  Nullopt if it is neither.
+ */
+static std::optional<int64_t>
+time_buckets_msecs(sqlite3_value* value)
+{
+    if (is_sql_number(value)) {
+        return sqlite3_value_int64(value);
+    }
+    if (sqlite3_value_type(value) != SQLITE3_TEXT) {
+        return std::nullopt;
+    }
+
+    thread_local date_time_scanner dts;
+    const auto* str = (const char*) sqlite3_value_text(value);
+    const auto len = (size_t) sqlite3_value_bytes(value);
+    exttm tm;
+    timeval tv;
+    if (scan_sql_timestamp(dts, str, len, &tm, tv) != str + len) {
+        return std::nullopt;
+    }
+    return std::chrono::duration_cast<std::chrono::milliseconds>(to_us(tv))
+        .count();
+}
+
 static void
 time_buckets_step(sqlite3_context* context, int argc, sqlite3_value** argv)
 {
@@ -600,24 +626,26 @@ time_buckets_step(sqlite3_context* context, int argc, sqlite3_value** argv)
         }
         if (argc == 5) {
             if (sqlite3_value_type(argv[3]) != SQLITE_NULL) {
-                if (!is_sql_number(argv[3])) {
+                tbc->tbc_lo = time_buckets_msecs(argv[3]);
+                if (!tbc->tbc_lo) {
                     sqlite3_result_error(
                         context,
-                        "time_buckets: lo must be a time in milliseconds",
+                        "time_buckets: lo must be a time in milliseconds "
+                        "or a timestamp",
                         -1);
                     return;
                 }
-                tbc->tbc_lo = sqlite3_value_int64(argv[3]);
             }
             if (sqlite3_value_type(argv[4]) != SQLITE_NULL) {
-                if (!is_sql_number(argv[4])) {
+                tbc->tbc_hi = time_buckets_msecs(argv[4]);
+                if (!tbc->tbc_hi) {
                     sqlite3_result_error(
                         context,
-                        "time_buckets: hi must be a time in milliseconds",
+                        "time_buckets: hi must be a time in milliseconds "
+                        "or a timestamp",
                         -1);
                     return;
                 }
-                tbc->tbc_hi = sqlite3_value_int64(argv[4]);
             }
             if (tbc->tbc_lo && tbc->tbc_hi && *tbc->tbc_lo > *tbc->tbc_hi) {
                 sqlite3_result_error(
@@ -628,10 +656,18 @@ time_buckets_step(sqlite3_context* context, int argc, sqlite3_value** argv)
         tbc->tbc_max_buckets = max_buckets;
     }
 
-    if (!is_sql_number(argv[0])) {
+    if (sqlite3_value_type(argv[0]) == SQLITE_NULL) {
         return;
     }
-    const auto t = sqlite3_value_int64(argv[0]);
+    const auto t_opt = time_buckets_msecs(argv[0]);
+    if (!t_opt) {
+        sqlite3_result_error(
+            context,
+            "time_buckets: t must be a time in milliseconds or a timestamp",
+            -1);
+        return;
+    }
+    const auto t = t_opt.value();
     if ((tbc->tbc_lo && t < *tbc->tbc_lo) || (tbc->tbc_hi && t > *tbc->tbc_hi))
     {
         return;
@@ -832,21 +868,25 @@ time_extension_functions(struct FuncDef** basic_funcs,
                     "max_buckets, lo, and hi arguments are read from the "
                     "first row")
                 .with_parameter(
-                    {"t", "The time, in milliseconds (e.g. log_time_msecs)"})
+                    {"t",
+                     "The time, in milliseconds (e.g. log_time_msecs) or as a "
+                     "timestamp (e.g. log_time)"})
                 .with_parameter({"value", "The numeric value"})
                 .with_parameter(
                     {"max_buckets",
                      "The most buckets to use for the span, at least 2"})
                 .with_parameter(
                     help_text("lo",
-                              "The start of the span, in milliseconds, so "
+                              "The start of the span, in milliseconds or as "
+                              "a timestamp, so "
                               "several groups get the same buckets.  Rows "
                               "before it are skipped.  Defaults to the "
                               "group's first time")
                         .optional())
                 .with_parameter(help_text("hi",
                                           "The end of the span, in "
-                                          "milliseconds.  Rows after it are "
+                                          "milliseconds or as a timestamp.  "
+                                          "Rows after it are "
                                           "skipped.  Defaults to the group's "
                                           "last time")
                                     .optional())

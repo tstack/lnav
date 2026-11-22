@@ -12,6 +12,7 @@ add_library(
         fs_util.cc
         fs_util.glob_match.cc
         fts_fuzzy_match.cc
+        error_type.cc
         humanize.cc
         humanize.network.cc
         humanize.time.cc
@@ -51,6 +52,7 @@ add_library(
         date_time_scanner.cfg.hh
         date_time_scanner.hh
         distributed_slice.hh
+        error_type.hh
         enum_util.hh
         from_trait.hh
         fs_util.hh
