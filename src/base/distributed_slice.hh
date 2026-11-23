@@ -44,10 +44,17 @@
 #  define NO_ASAN
 #endif
 
+// The elements of a slice are walked as an array, so they have to be laid
+// out back-to-back.  Without an explicit alignment, compilers can raise the
+// alignment of larger objects (GCC on x86-64 aligns those of 32 bytes or more
+// to 32), which leaves gaps between the elements that the walk does not skip.
+#define DS_ALIGNMENT sizeof(void*)
+
 #if defined(__APPLE__)
 #    define DIST_SLICE(id) \
         __attribute__((NO_ASAN \
                        used, \
+                       aligned(DS_ALIGNMENT), \
                        section("__DATA,__ds_" DS_STRINGIZE( \
                            id) ",regular,no_dead_strip")))
 #    define DIST_SLICE_BEGIN(id) \
@@ -56,8 +63,10 @@
         __asm("section$end$__DATA$__ds_" DS_STRINGIZE(id))
 #else
 #    define DIST_SLICE(id) \
-        __attribute__(( \
-            no_sanitize_address, used, section("ds_" DS_STRINGIZE(id))))
+        __attribute__((no_sanitize_address, \
+                       used, \
+                       aligned(DS_ALIGNMENT), \
+                       section("ds_" DS_STRINGIZE(id))))
 #    define DIST_SLICE_BEGIN(id) __asm("__start_ds_" DS_STRINGIZE(id))
 #    define DIST_SLICE_END(id)   __asm("__stop_ds_" DS_STRINGIZE(id))
 #endif
@@ -137,6 +146,10 @@ private:
 
 #define DIST_SLICE_CONTAINER(T, id) \
     (+[]() -> auto { \
+        static_assert(alignof(T) <= DS_ALIGNMENT, \
+                      "slice elements are packed to DS_ALIGNMENT"); \
+        static_assert(sizeof(T) % DS_ALIGNMENT == 0, \
+                      "slice elements must be a multiple of DS_ALIGNMENT"); \
         extern T start DIST_SLICE_BEGIN(id); \
         extern T end DIST_SLICE_END(id); \
 \
