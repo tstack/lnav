@@ -1,0 +1,2 @@
+;UPDATE all_logs SET log_mark = 0, log_comment = NULL, log_tags = '["#mine"]', log_annotations = NULL, log_opid = NULL WHERE log_time_msecs = 1713864271484 AND log_format = 'zookeeper_log' AND log_line_hash = 'v1:bb301035f966c01dca7f429e6618b28c'
+;UPDATE all_logs SET log_mark = 1, log_comment = NULL, log_tags = NULL, log_annotations = NULL, log_opid = NULL WHERE log_time_msecs = 1713864273484 AND log_format = 'zookeeper_log' AND log_line_hash = 'v1:4c572ba37d4049301021d8f157c0f4e3'

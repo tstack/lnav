@@ -676,3 +676,20 @@ export TZ=UTC
 run_cap_test ${lnav_test} -n \
     -c ':load-session' \
     ${test_dir}/logfile_metrics_interleaved.0
+
+# tags added by the format are not exported and an UPDATE of the user's
+# tags leaves them in place
+run_cap_test ${lnav_test} -nq \
+    -c ':goto 0' \
+    -c ':tag #mine' \
+    -c ':goto 2' \
+    -c ':mark' \
+    -c ':export-session-to exported-format-tags-session.0.lnav' \
+    ${test_dir}/logfile_zookeeper_election.0
+
+run_cap_test grep UPDATE exported-format-tags-session.0.lnav
+
+run_cap_test ${lnav_test} -n \
+    -c '|exported-format-tags-session.0.lnav' \
+    -c ';SELECT log_line, log_mark, log_tags, log_user_tags FROM all_logs' \
+    ${test_dir}/logfile_zookeeper_election.0

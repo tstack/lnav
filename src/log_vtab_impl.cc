@@ -77,6 +77,7 @@ const std::unordered_set<string_fragment, frag_hasher>
         "log_sticky_mark"_frag,
         "log_comment"_frag,
         "log_tags"_frag,
+        "log_user_tags"_frag,
         "log_annotations"_frag,
         "log_filters"_frag,
         "log_opid"_frag,
@@ -119,6 +120,7 @@ static const char* const LOG_FOOTER_COLUMNS = R"(
   log_sticky_mark  BOOLEAN HIDDEN,                    -- True if the log message is a sticky header
   log_comment      TEXT,                              -- The comment for this message
   log_tags         TEXT,                              -- A JSON list of tags for this message
+  log_user_tags    TEXT HIDDEN,                       -- A JSON list of the tags added by the user
   log_annotations  TEXT,                              -- A JSON object of annotations for this messages
   log_filters      TEXT,                              -- A JSON list of filter IDs that matched this message
   log_opid         TEXT HIDDEN,                       -- The message's OPID from the log message or user
@@ -153,6 +155,7 @@ enum class log_footer_columns : uint32_t {
     sticky_mark,
     comment,
     tags,
+    user_tags,
     annotations,
     filters,
     opid,
@@ -187,6 +190,7 @@ static const string_fragment log_footer_column_names[] = {
     "log_sticky_mark"_frag,
     "log_comment"_frag,
     "log_tags"_frag,
+    "log_user_tags"_frag,
     "log_annotations"_frag,
     "log_filters"_frag,
     "log_opid"_frag,
@@ -1277,6 +1281,36 @@ vt_column(sqlite3_vtab_cursor* cur, sqlite3_context* ctx, int col)
 
                                 for (const auto& entry : meta.bm_tags) {
                                     arr.gen(entry.te_tag);
+                                }
+                            }
+
+                            to_sqlite(ctx, json_string(gen));
+                        }
+                        break;
+                    }
+                    case log_footer_columns::user_tags: {
+                        auto line_meta_opt = vt->lss->find_bookmark_metadata(
+                            vc->log_cursor.lc_curr_line);
+                        if (!line_meta_opt
+                            || line_meta_opt.value()->user_tag_count() == 0)
+                        {
+                            sqlite3_result_null(ctx);
+                        } else {
+                            const auto& meta = *(line_meta_opt.value());
+
+                            yajlpp_gen gen;
+
+                            yajl_gen_config(gen, yajl_gen_beautify, false);
+
+                            {
+                                yajlpp_array arr(gen);
+
+                                for (const auto& entry : meta.bm_tags) {
+                                    if (entry.te_source
+                                        == bookmark_metadata::meta_source::user)
+                                    {
+                                        arr.gen(entry.te_tag);
+                                    }
                                 }
                             }
 
@@ -2533,6 +2567,7 @@ vt_filter_constraints::add_footer(int32_t orig_col,
         case log_footer_columns::sticky_mark:
         case log_footer_columns::comment:
         case log_footer_columns::tags:
+        case log_footer_columns::user_tags:
         case log_footer_columns::annotations:
         case log_footer_columns::filters:
         case log_footer_columns::named_searches:
@@ -3585,6 +3620,7 @@ vt_best_index(sqlite3_vtab* tab, sqlite3_index_info* p_info)
                         case log_footer_columns::sticky_mark:
                         case log_footer_columns::comment:
                         case log_footer_columns::tags:
+                        case log_footer_columns::user_tags:
                         case log_footer_columns::annotations:
                         case log_footer_columns::filters:
                         case log_footer_columns::named_searches:
@@ -3878,8 +3914,14 @@ vt_update(sqlite3_vtab* tab,
         }
 
         auto& bv_meta = vt->tc->get_bookmarks()[&textview_curses::BM_META];
+        // Tags added by the format are not owned by the user, so an UPDATE
+        // of log_tags only replaces the user's tags and leaves these alone.
+        auto existing_meta_opt = vt->lss->find_bookmark_metadata(vrowid);
+        bool has_format_tags = existing_meta_opt
+            && existing_meta_opt.value()->bm_tags.size()
+                > existing_meta_opt.value()->user_tag_count();
         bool has_meta = log_comment != nullptr || log_tags.has_value()
-            || log_annos.has_value();
+            || log_annos.has_value() || has_format_tags;
 
         if (bv_meta.bv_tree.exists(vrowid) && !has_meta) {
             vt->tc->set_user_mark(&textview_curses::BM_META, vrowid, false);
@@ -3933,8 +3975,16 @@ vt_update(sqlite3_vtab* tab,
             } else {
                 line_meta.bm_comment.clear();
             }
+            line_meta.bm_tags.erase(
+                std::remove_if(
+                    line_meta.bm_tags.begin(),
+                    line_meta.bm_tags.end(),
+                    [](const auto& entry) {
+                        return entry.te_source
+                            == bookmark_metadata::meta_source::user;
+                    }),
+                line_meta.bm_tags.end());
             if (log_tags) {
-                line_meta.bm_tags.clear();
                 for (const auto& tag : tmp_tags.pt_tags) {
                     line_meta.add_tag(tag);
                 }
@@ -3942,8 +3992,6 @@ vt_update(sqlite3_vtab* tab,
                 for (const auto& entry : line_meta.bm_tags) {
                     bookmark_metadata::KNOWN_TAGS.insert(entry.te_tag);
                 }
-            } else {
-                line_meta.bm_tags.clear();
             }
             if (log_annos) {
                 line_meta.bm_annotations = std::move(tmp_bm.bm_annotations);

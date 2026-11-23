@@ -408,6 +408,7 @@ dist_noinst_DATA = \
 	logfile_mixed_json2.json \
 	logfile_mongodb.0 \
 	logfile_mux_zookeeper.0 \
+	logfile_zookeeper_election.0 \
 	logfile_invalid_utf8.0 \
 	logfile_java.0 \
 	logfile_java.1 \

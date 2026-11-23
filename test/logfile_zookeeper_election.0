@@ -1,0 +1,3 @@
+2024-04-23 09:24:31,484 [myid:] - INFO  [QuorumPeer[myid=3]:o.a.z.s.q.QuorumPeer@1] - New election. My id = 3
+2024-04-23 09:24:32,484 [myid:] - INFO  [QuorumPeer[myid=3]:o.a.z.s.q.QuorumPeer@1] - something else
+2024-04-23 09:24:33,484 [myid:] - INFO  [QuorumPeer[myid=3]:o.a.z.s.q.Learner@1] - FOLLOWING - LEADER ELECTION TOOK - 22 MS

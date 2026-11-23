@@ -198,11 +198,11 @@ export_to(FILE* file)
     static auto& lnav_db = injector::get<auto_sqlite3&>();
 
     static const char* BOOKMARK_QUERY = R"(
-SELECT log_time_msecs, log_format, log_mark, log_comment, log_tags, log_annotations, log_user_opid, log_line_hash
+SELECT log_time_msecs, log_format, log_mark, log_comment, log_user_tags, log_annotations, log_user_opid, log_line_hash
    FROM all_logs
    WHERE log_mark = 1 OR
          log_comment IS NOT NULL OR
-         log_tags IS NOT NULL OR
+         log_user_tags IS NOT NULL OR
          log_annotations IS NOT NULL OR
          (log_user_opid IS NOT NULL AND log_user_opid != '')
 )";

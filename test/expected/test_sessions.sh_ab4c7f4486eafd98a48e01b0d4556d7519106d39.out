@@ -1,0 +1,4 @@
+[1;4mlog_line[0m[1;4m [0m[1;4mlog_mark[0m[1;4m [0m[1;4m            log_tags            [0m[1;4m [0m[1;4mlog_user_tags[0m[1;4m [0m
+       0        0 ["#zk-election-started","#mine"] ["#mine"]     
+       1        0 [1m[36m<NULL>                          [0m [1m[36m<NULL>       [0m 
+[1m       2[0m[1m [0m[1m       1[0m[1m [0m[1m["#zk-election-finished"]       [0m[1m [0m[1m[36m<NULL>       [0m[1m [0m
