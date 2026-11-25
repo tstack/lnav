@@ -400,8 +400,8 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
             struct tm row_tm;
             gmtime_r(&tv.tv_sec, &row_tm);
             char ts_buf[64];
-            auto ts_len
-                = strftime(ts_buf, sizeof(ts_buf), "%Y-%m-%dT%H:%M:%S", &row_tm);
+            auto ts_len = strftime(
+                ts_buf, sizeof(ts_buf), "%Y-%m-%dT%H:%M:%S", &row_tm);
             composed.append(ts_buf, ts_len);
             const auto all_flags = this->lss_all_timestamp_flags;
             if (all_flags & (ETF_MICROS_SET | ETF_NANOS_SET)) {
@@ -656,9 +656,9 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                         emit_cell(cell_lf,
                                   string_fragment::from_str(column.mdc_label),
                                   found,
-                                  found != nullptr
-                                      ? cell_lf->stats_for_metric(found->mc_name)
-                                      : nullptr,
+                                  found != nullptr ? cell_lf->stats_for_metric(
+                                                         found->mc_name)
+                                                   : nullptr,
                                   col_width,
                                   cell_format->get_metric_range(
                                       string_fragment::from_str(mdd.mdd_name)));
@@ -688,19 +688,17 @@ logfile_sub_source::text_value_for_line(textview_curses& tc,
                 {
                     continue;
                 }
-                varying.emplace_back(
-                    std::make_pair(
-                        !user_shown,
-                        cell_lf->get_metrics().slot_for(cell.mc_name).value_or(
-                            0)),
-                    &cell);
+                varying.emplace_back(std::make_pair(!user_shown,
+                                                    cell_lf->get_metrics()
+                                                        .slot_for(cell.mc_name)
+                                                        .value_or(0)),
+                                     &cell);
             }
-            std::stable_sort(
-                varying.begin(),
-                varying.end(),
-                [](const auto& lhs, const auto& rhs) {
-                    return lhs.first < rhs.first;
-                });
+            std::stable_sort(varying.begin(),
+                             varying.end(),
+                             [](const auto& lhs, const auto& rhs) {
+                                 return lhs.first < rhs.first;
+                             });
             // A cell that doesn't fit is skipped for a shorter one after it,
             // since names with labels can be wider than the view.
             constexpr size_t MORE_WIDTH = 12;  // "  +NNNN more"
@@ -1814,9 +1812,8 @@ struct sort_input {
         // should scale with the length of the run and not with what is left
         // of the file.
         if (this->si_order == nullptr) {
-            auto iter = lnav::gallop_lower_bound(begin + this->next_pos(),
-                                                 this->si_file_ptr->end(),
-                                                 limit_time);
+            auto iter = lnav::gallop_lower_bound(
+                begin + this->next_pos(), this->si_file_ptr->end(), limit_time);
             while (take_ties && iter != this->si_file_ptr->end()
                    && iter->get_time<>() == limit_time)
             {
@@ -1857,7 +1854,7 @@ logfile_sub_source::rebuild_result
 logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
 {
     if (this->tss_view == nullptr) {
-        return rebuild_result::rr_no_change;
+        return {};
     }
 
     this->lss_indexing_in_progress = true;
@@ -1868,14 +1865,15 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
     size_t total_lines = 0;
     size_t est_remaining_lines = 0;
     int file_count = 0;
+    rebuild_result retval;
+    retval.rr_removed_files = std::exchange(this->lss_removed_files, 0);
     auto force = std::exchange(this->lss_force_rebuild, false);
-    auto retval = rebuild_result::rr_no_change;
     std::optional<std::chrono::microseconds> lowest_us = std::nullopt;
     auto search_start = 0_vl;
 
     if (force) {
         log_debug("forced to full rebuild");
-        retval = rebuild_result::rr_full_rebuild;
+        retval.rr_change = rebuild_change::full_rebuild;
         this->tss_level_filtered_count = 0;
         this->lss_index.clear();
     }
@@ -1932,7 +1930,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 log_debug("%zu: file closed, doing full rebuild",
                           ld.ld_file_index);
                 force = true;
-                retval = rebuild_result::rr_full_rebuild;
+                retval.rr_change = rebuild_change::full_rebuild;
             }
         } else {
             const auto pre_iter = prescan.find(lf);
@@ -1958,22 +1956,31 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                     ? lf->rebuild_index(deadline)
                     : pre_iter->second.psr_result;
 
-                if (ld.ld_lines_indexed < lf->size()
-                    && log_rebuild_res
-                        == logfile::rebuild_result_t::NO_NEW_LINES)
+                if (log_rebuild_res.rr_format_changed) {
+                    retval.rr_format_changes += 1;
+                }
+                if (!log_rebuild_res.rr_valid) {
+                    retval.rr_invalidated_files += 1;
+                }
+                if (log_rebuild_res.rr_valid && ld.ld_lines_indexed < lf->size()
+                    && log_rebuild_res.rr_change == logfile::index_change::none)
                 {
                     // This is a bit awkward... if the logfile indexing was
                     // complete before being added to us, we need to adjust
                     // the rebuild result to make it look like new lines
                     // were added.
-                    log_rebuild_res = logfile::rebuild_result_t::NEW_LINES;
+                    log_rebuild_res.rr_change = logfile::index_change::append;
                 }
-                switch (log_rebuild_res) {
-                    case logfile::rebuild_result_t::NO_NEW_LINES:
+                // Invalid files also require the merged index to be rebuilt.
+                const auto change = log_rebuild_res.rr_valid
+                    ? log_rebuild_res.rr_change
+                    : logfile::index_change::reorder;
+                switch (change) {
+                    case logfile::index_change::none:
                         break;
-                    case logfile::rebuild_result_t::NEW_LINES:
-                        if (retval == rebuild_result::rr_no_change) {
-                            retval = rebuild_result::rr_appended_lines;
+                    case logfile::index_change::append:
+                        if (retval.rr_change == rebuild_change::none) {
+                            retval.rr_change = rebuild_change::append;
                         }
                         log_debug("new lines for %s:%zu",
                                   lf->get_filename_as_string().c_str(),
@@ -2003,10 +2010,11 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                                         ? (uint64_t) -1
                                         : last_indexed_line->get_time<>()
                                               .count());
-                                if (retval
-                                    <= rebuild_result::rr_partial_rebuild)
+                                if (retval.rr_change
+                                    <= rebuild_change::partial_rebuild)
                                 {
-                                    retval = rebuild_result::rr_partial_rebuild;
+                                    retval.rr_change
+                                        = rebuild_change::partial_rebuild;
                                     if (!lowest_us
                                         || new_file_line.get_time()
                                             < lowest_us.value())
@@ -2021,11 +2029,10 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                             }
                         }
                         break;
-                    case logfile::rebuild_result_t::INVALID:
-                    case logfile::rebuild_result_t::NEW_ORDER:
+                    case logfile::index_change::reorder:
                         log_debug("%s: log file has a new order, full rebuild",
                                   lf->get_filename().c_str());
-                        retval = rebuild_result::rr_full_rebuild;
+                        retval.rr_change = rebuild_change::full_rebuild;
                         force = true;
                         break;
                 }
@@ -2043,14 +2050,16 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         this->lss_force_rebuild = this->lss_force_rebuild || force;
         log_debug(
             "merge deferred (files=%d; lines=%zu)", file_count, total_lines);
-        return rebuild_result::rr_in_progress;
+        retval.rr_change = rebuild_change::none;
+        retval.rr_merge_complete = false;
+        return retval;
     }
     if (this->lss_index.reserve(total_lines + est_remaining_lines)) {
         // The index array was reallocated, just do a full rebuild since it's
         // been cleared out.
         log_debug("expanding index capacity %zu", this->lss_index.ba_capacity);
         force = true;
-        retval = rebuild_result::rr_full_rebuild;
+        retval.rr_change = rebuild_change::full_rebuild;
         this->tss_level_filtered_count = 0;
     }
 
@@ -2074,7 +2083,7 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         if (this->lss_index_delegate) {
             this->lss_index_delegate->index_start(*this);
         }
-    } else if (retval == rebuild_result::rr_partial_rebuild) {
+    } else if (retval.rr_change == rebuild_change::partial_rebuild) {
         size_t remaining = 0;
 
         log_debug("partial rebuild with lowest time: %lld",
@@ -2151,10 +2160,12 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         // need to make sure we rebuild in case no new data comes in
         this->lss_force_rebuild = true;
         this->update_regions(this->lss_filtered_index.size());
-        return rebuild_result::rr_appended_lines;
+        retval.rr_change = rebuild_change::append;
+        retval.rr_merge_complete = false;
+        return retval;
     }
 
-    if (retval != rebuild_result::rr_no_change || force) {
+    if (retval.rr_change != rebuild_change::none || force) {
         size_t index_size = 0, start_size = this->lss_index.size();
 
         // Metric files compose their LOG-view line at render time from
@@ -2183,10 +2194,12 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 if (metric_total_width == 0) {
                     metric_total_width = METRIC_TS_WIDTH;
                 }
-                const auto* display = lf->get_format_ptr()->get_metric_display();
+                const auto* display
+                    = lf->get_format_ptr()->get_metric_display();
                 if (display != nullptr) {
                     for (const auto& mdd : *display) {
-                        metric_total_width += lf->metric_display_line_width(mdd);
+                        metric_total_width
+                            += lf->metric_display_line_width(mdd);
                     }
                     continue;
                 }
@@ -2459,8 +2472,8 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
 
         this->update_regions(filt_start_rows);
-        if (retval == rebuild_result::rr_full_rebuild
-            || retval == rebuild_result::rr_partial_rebuild
+        if (retval.rr_change == rebuild_change::full_rebuild
+            || retval.rr_change == rebuild_change::partial_rebuild
             || this->lss_filtered_index.size() != filt_start_rows)
         {
             this->record_index_change(filt_start_rows);
@@ -2473,23 +2486,22 @@ logfile_sub_source::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
     }
 
-    switch (retval) {
-        case rebuild_result::rr_no_change:
-        case rebuild_result::rr_in_progress:
+    switch (retval.rr_change) {
+        case rebuild_change::none:
             break;
-        case rebuild_result::rr_full_rebuild:
+        case rebuild_change::full_rebuild:
             log_debug("redoing search");
             this->lss_index_generation += 1;
             this->tss_view->reload_data();
             this->tss_view->redo_search();
             break;
-        case rebuild_result::rr_partial_rebuild:
+        case rebuild_change::partial_rebuild:
             log_debug("redoing search from: %d", (int) search_start);
             this->lss_index_generation += 1;
             this->tss_view->reload_data();
             this->tss_view->search_new_data(search_start);
             break;
-        case rebuild_result::rr_appended_lines:
+        case rebuild_change::append:
             this->tss_view->reload_data();
             this->tss_view->search_new_data();
             break;
@@ -3297,13 +3309,11 @@ struct logfile_data_eq {
 bool
 logfile_sub_source::insert_file(const std::shared_ptr<logfile>& lf)
 {
-    iterator existing;
-
     require(lf->size() <= MAX_LINES_PER_FILE);
 
-    existing = std::find_if(this->lss_files.begin(),
-                            this->lss_files.end(),
-                            logfile_data_eq(nullptr));
+    auto existing = std::find_if(this->lss_files.begin(),
+                                 this->lss_files.end(),
+                                 logfile_data_eq(nullptr));
     if (existing == this->lss_files.end()) {
         if (this->lss_files.size() >= MAX_FILES) {
             return false;
@@ -3316,6 +3326,7 @@ logfile_sub_source::insert_file(const std::shared_ptr<logfile>& lf)
     } else {
         (*existing)->set_file(lf);
     }
+    this->lss_file_generation += 1;
 
     return true;
 }
@@ -4032,8 +4043,7 @@ logfile_sub_source::text_clear_marks(const bookmark_type_t* bm)
         {
             this->find_line(*iter)->set_mark(false);
         }
-        if (!this->lss_user_marks[bm].empty() && this->has_content_filters())
-        {
+        if (!this->lss_user_marks[bm].empty() && this->has_content_filters()) {
             this->tss_mark_refilter_pending = true;
         }
     }
@@ -4070,6 +4080,8 @@ logfile_sub_source::remove_file(std::shared_ptr<logfile> lf)
             }
         }
 
+        this->lss_removed_files += 1;
+        this->lss_file_generation += 1;
         this->lss_force_rebuild = true;
     }
     while (!this->lss_files.empty()) {
@@ -5149,8 +5161,7 @@ bool
 logfile_sub_source::fold_metric_sibling(const logfile* lf,
                                         logfile::iterator line_iter)
 {
-    if (!lf->get_format_ptr()->lf_is_metric
-        || this->lss_filtered_index.empty())
+    if (!lf->get_format_ptr()->lf_is_metric || this->lss_filtered_index.empty())
     {
         return false;
     }
@@ -5226,12 +5237,13 @@ logfile_sub_source::row_is_filtered_out(size_t idx,
     // check_filters() counts the lines hidden by the minimum level, which
     // is only meant to happen while the filtered index is being built.
     const auto level_filtered_count = this->tss_level_filtered_count;
-    const auto retval = !this->check_filters(ld,
-                                             line_iter,
-                                             line_number,
-                                             filter_in_mask,
-                                             filter_out_mask,
-                                             this->is_msg_marked(ld, line_iter));
+    const auto retval
+        = !this->check_filters(ld,
+                               line_iter,
+                               line_number,
+                               filter_in_mask,
+                               filter_out_mask,
+                               this->is_msg_marked(ld, line_iter));
     this->tss_level_filtered_count = level_filtered_count;
     return retval;
 }
@@ -5671,9 +5683,9 @@ logfile_sub_source::add_id_values()
         if (sa.sa_type == &L_OPID && values.lvv_opid_value
             && !values.lvv_opid_value->empty())
         {
-            ids.emplace_back(sa.sa_range,
-                             SA_OPID_VALUE.value(
-                                 values.lvv_opid_value->to_string()));
+            ids.emplace_back(
+                sa.sa_range,
+                SA_OPID_VALUE.value(values.lvv_opid_value->to_string()));
         } else if (sa.sa_type == &SA_THREAD_ID && values.lvv_thread_id_value
                    && !values.lvv_thread_id_value->empty())
         {

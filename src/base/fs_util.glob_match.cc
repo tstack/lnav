@@ -161,8 +161,7 @@ glob_match(const std::string& pattern, const std::string& path)
     // pattern, which means there must be the same number of them.
     if (!is_recursive_glob(pattern)
         && count_separators(pattern)
-            != static_cast<size_t>(
-                std::count(path.begin(), path.end(), '/')))
+            != static_cast<size_t>(std::count(path.begin(), path.end(), '/')))
     {
         return false;
     }

@@ -138,6 +138,7 @@ public:
         size_t rr_new_data{0};
         bool rr_scan_completed{true};
         bool rr_rescan_needed{false};
+        bool rr_formats_changed{false};
     };
 
     rescan_result_t rescan_files(scan_callback& callback,
@@ -299,8 +300,7 @@ private:
 
     /** What a parallel pre-scan worked out about one file. */
     struct prescan_result {
-        logfile::rebuild_result_t psr_result{
-            logfile::rebuild_result_t::NO_NEW_LINES};
+        logfile::rebuild_result_t psr_result;
         /** The scan threw; the caller closes the file, as an inline one would. */
         bool psr_failed{false};
     };

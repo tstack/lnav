@@ -52,27 +52,20 @@ struct registration {
     instance_info r_info;
     std::filesystem::path r_path;
     time_t r_started{0};
+    bool r_metadata_needs_write{true};
+    /** A retry was made after the last failed write; do not try again. */
+    bool r_retried{false};
 };
 
 struct registry_state {
     std::optional<registration> rs_registration;
     std::vector<std::string> rs_command_line_paths;
+    log_format_counts rs_log_formats;
 };
 
 using safe_registry_state = safe::Safe<registry_state>;
 
 safe_registry_state REGISTRY;
-
-std::string
-current_dir()
-{
-    std::error_code ec;
-    auto retval = std::filesystem::current_path(ec);
-    if (ec) {
-        return "";
-    }
-    return retval.string();
-}
 
 void
 prune_dead_instances(const std::filesystem::path& dir)
@@ -101,28 +94,46 @@ prune_dead_instances(const std::filesystem::path& dir)
 }
 
 void
-write_registration(const registration& reg,
-                   const std::vector<std::string>& paths)
+write_registration(registry_state& rs)
 {
+    auto& reg = rs.rs_registration.value();
+    reg.r_retried = false;
     auto rec = instance_record{
         getpid(),
         PACKAGE_VERSION,
         reg.r_info.ii_name,
-        current_dir(),
-        paths,
+        lnav::paths::current(),
+        rs.rs_command_line_paths,
         reg.r_info.ii_url,
         reg.r_info.ii_port,
         reg.r_info.ii_api_key,
         reg.r_started,
+        rs.rs_log_formats,
     };
     auto content = instance_record::handlers.to_string(rec);
 
     auto write_res = lnav::filesystem::write_file(
         reg.r_path, string_fragment::from_str(content));
+    log_info("writing registration file: %s", reg.r_path.c_str());
     if (write_res.isErr()) {
         log_error("unable to write discovery file: %s -- %s",
                   reg.r_path.c_str(),
                   write_res.unwrapErr().c_str());
+        return;
+    }
+    reg.r_metadata_needs_write = false;
+}
+
+void
+write_registration_if_pending(registry_state& rs)
+{
+    if (!rs.rs_registration) {
+        return;
+    }
+
+    auto& reg = rs.rs_registration.value();
+    if (reg.r_metadata_needs_write) {
+        write_registration(rs);
     }
 }
 
@@ -139,6 +150,13 @@ read_schema_id(yajlpp_parse_context* ypc,
 {
     return 1;
 }
+
+static const json_path_container log_format_handlers = {
+    yajlpp::pattern_property_handler("(?<format_name>\\w+)")
+        .with_min_value(1)
+        .with_description("Number of open files detected in this format")
+        .for_field(&instance_record::ir_log_formats),
+};
 
 const typed_json_path_container<instance_record> instance_record::handlers = typed_json_path_container<instance_record>{
     json_path_handler("$schema", read_schema_id)
@@ -172,6 +190,9 @@ const typed_json_path_container<instance_record> instance_record::handlers = typ
     yajlpp::property_handler("started")
         .with_description("When the server was started, in seconds since the epoch")
         .for_field(&instance_record::ir_started),
+    yajlpp::property_handler("log_formats")
+        .with_description("Open file counts by detected log format, updated after indexing settles")
+        .with_children(log_format_handlers),
 }
     .with_schema_id2(SCHEMA_ID)
     .with_description2("Written by each running lnav whose external-access server is open, so clients can find and connect to it.");
@@ -228,18 +249,44 @@ register_instance(instance_info ii)
             time(nullptr),
         };
     }
-    write_registration(rs->rs_registration.value(), rs->rs_command_line_paths);
+    rs->rs_registration->r_metadata_needs_write = true;
+    write_registration(*rs);
 }
 
 void
 refresh_instance()
 {
-    safe::ReadAccess<safe_registry_state> rs(REGISTRY);
+    safe::WriteAccess<safe_registry_state> rs(REGISTRY);
 
     if (rs->rs_registration) {
-        write_registration(rs->rs_registration.value(),
-                           rs->rs_command_line_paths);
+        rs->rs_registration->r_metadata_needs_write = true;
+        write_registration(*rs);
     }
+}
+
+void
+update_log_formats(log_format_counts formats)
+{
+    safe::WriteAccess<safe_registry_state> rs(REGISTRY);
+
+    rs->rs_log_formats = std::move(formats);
+    if (rs->rs_registration) {
+        log_debug("log format counts changed, updating registration");
+        rs->rs_registration->r_metadata_needs_write = true;
+    }
+    write_registration_if_pending(*rs);
+}
+
+void
+retry_registration_write()
+{
+    safe::WriteAccess<safe_registry_state> rs(REGISTRY);
+
+    if (!rs->rs_registration || rs->rs_registration->r_retried) {
+        return;
+    }
+    write_registration_if_pending(*rs);
+    rs->rs_registration->r_retried = true;
 }
 
 void
@@ -257,8 +304,7 @@ unregister_instance()
 std::vector<instance_record>
 running_instances()
 {
-    static const intern_string_t SRC
-        = intern_string::lookup("external-access");
+    static const intern_string_t SRC = intern_string::lookup("external-access");
 
     std::vector<instance_record> retval;
     std::error_code ec;
@@ -282,12 +328,10 @@ running_instances()
         auto parse_res = instance_record::handlers.parser_for(SRC).of(
             string_fragment::from_str(content));
         if (parse_res.isErr()) {
-            log_warning("unable to parse discovery file: %s -- %s",
-                        path.c_str(),
-                        parse_res.unwrapErr()[0]
-                            .to_attr_line()
-                            .get_string()
-                            .c_str());
+            log_warning(
+                "unable to parse discovery file: %s -- %s",
+                path.c_str(),
+                parse_res.unwrapErr()[0].to_attr_line().get_string().c_str());
             continue;
         }
 
@@ -300,11 +344,10 @@ running_instances()
         retval.emplace_back(std::move(rec));
     }
 
-    std::stable_sort(retval.begin(),
-                     retval.end(),
-                     [](const auto& lhs, const auto& rhs) {
-                         return lhs.ir_started < rhs.ir_started;
-                     });
+    std::stable_sort(
+        retval.begin(), retval.end(), [](const auto& lhs, const auto& rhs) {
+            return lhs.ir_started < rhs.ir_started;
+        });
 
     return retval;
 }

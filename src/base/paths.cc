@@ -30,7 +30,7 @@
 #include <filesystem>
 
 #ifdef __CYGWIN__
-#include <algorithm>
+#    include <algorithm>
 #endif
 
 #include <unistd.h>
@@ -83,7 +83,8 @@ dotlnav()
 #ifdef __CYGWIN__
     const auto* app_data = getenv("APPDATA");
     if (app_data != nullptr) {
-        auto app_data_path = std::filesystem::path(windows_to_unix_file_path(app_data));
+        auto app_data_path
+            = std::filesystem::path(windows_to_unix_file_path(app_data));
 
         if (std::filesystem::is_directory(app_data_path)) {
             return app_data_path / "lnav";
@@ -147,7 +148,19 @@ workdir()
     return tmp_path / std::filesystem::path(subdir_name);
 }
 
-std::filesystem::path userhome()
+std::filesystem::path
+current()
+{
+    std::error_code ec;
+    auto retval = std::filesystem::current_path(ec);
+    if (ec) {
+        return std::filesystem::path{};
+    }
+    return retval;
+}
+
+std::filesystem::path
+userhome()
 {
     if (auto home_env = getenv_opt("HOME")) {
         auto home_path = std::filesystem::path(home_env.value());

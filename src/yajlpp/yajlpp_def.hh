@@ -32,6 +32,7 @@
 #ifndef yajlpp_def_hh
 #define yajlpp_def_hh
 
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 
@@ -540,7 +541,8 @@ struct json_path_handler : public json_path_handler_base {
         = (FieldKind<Args...>::inner_kind == field_kind::map)
         && !FieldKind<Args...>::is_optional
         && std::is_same_v<intern_string_t,
-                          typename FieldKind<Args...>::key_type>;
+                          typename FieldKind<Args...>::key_type>
+        && !raw_field_is_v<std::map<intern_string_t, int64_t>, Args...>;
 
     template<typename... Args>
     inline static constexpr bool is_generic_string_keyed_map_field_v
@@ -798,55 +800,107 @@ struct json_path_handler : public json_path_handler_base {
         return *this;
     }
 
-    template<typename... Args,
-             std::enable_if_t<
-                 raw_field_is_v<std::map<std::string, std::string>, Args...>,
-                 bool> = true>
+    template<
+        typename... Args,
+        std::enable_if_t<
+            raw_field_is_v<std::map<std::string, std::string>, Args...>
+                || raw_field_is_v<std::map<intern_string_t, int64_t>, Args...>,
+            bool> = true>
     json_path_handler& for_field(Args... args)
     {
-        this->add_cb(str_field_cb2);
-        this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
-                                     const string_fragment& value_str,
-                                     yajl_string_props_t* props) {
-            auto* obj = ypc->ypc_obj_stack.top();
-            auto key = ypc->get_path_fragment(-1);
-
-            json_path_handler::get_field(obj, args...)[key]
-                = value_str.to_string();
-
-            return 1;
+        const auto find_entry = [](const auto& field,
+                                   const std::string& name) {
+            if constexpr (raw_field_is_v<std::map<intern_string_t, int64_t>,
+                                         Args...>)
+            {
+                // A linear scan, so a lookup does not intern a name that
+                // is not in the map.
+                const auto name_sf = string_fragment::from_str(name);
+                return std::find_if(field.begin(),
+                                    field.end(),
+                                    [&name_sf](const auto& pair) {
+                                        return pair.first.to_string_fragment()
+                                            == name_sf;
+                                    });
+            } else {
+                return field.find(name);
+            }
         };
+        if constexpr (raw_field_is_v<std::map<intern_string_t, int64_t>,
+                                     Args...>)
+        {
+            this->add_cb(int_field_cb);
+            this->jph_integer_cb
+                = [args...](yajlpp_parse_context* ypc, long long val) {
+                      const auto* jph = ypc->ypc_current_handler;
+                      auto* obj = ypc->ypc_obj_stack.top();
+
+                      if (val < jph->jph_min_value
+                          || val <= jph->jph_exclusive_min_value)
+                      {
+                          jph->report_min_value_error(ypc, val);
+                          return 1;
+                      }
+                      if (val > jph->jph_max_value) {
+                          jph->report_max_value_error(ypc, val);
+                          return 1;
+                      }
+
+                      auto key
+                          = intern_string::lookup(ypc->get_path_fragment(-1));
+                      json_path_handler::get_field(obj, args...)[key] = val;
+                      return 1;
+                  };
+        } else {
+            this->add_cb(str_field_cb2);
+            this->jph_str_cb = [args...](yajlpp_parse_context* ypc,
+                                         const string_fragment& value_str,
+                                         yajl_string_props_t*) {
+                auto* obj = ypc->ypc_obj_stack.top();
+                auto key = ypc->get_path_fragment(-1);
+                json_path_handler::get_field(obj, args...)[key]
+                    = value_str.to_string();
+                return 1;
+            };
+        }
         this->jph_path_provider =
             [args...](void* root, std::vector<std::string>& paths_out) {
                 const auto& field = json_path_handler::get_field(root, args...);
 
                 for (const auto& pair : field) {
-                    paths_out.emplace_back(pair.first);
+                    if constexpr (raw_field_is_v<
+                                      std::map<intern_string_t, int64_t>,
+                                      Args...>)
+                    {
+                        paths_out.emplace_back(pair.first.to_string());
+                    } else {
+                        paths_out.emplace_back(pair.first);
+                    }
                 }
             };
         this->jph_field_getter
-            = [args...](void* root,
-                        std::optional<std::string> name) -> const void* {
+            = [args..., find_entry](
+                  void* root, std::optional<std::string> name) -> const void* {
             const auto& field = json_path_handler::get_field(root, args...);
             if (!name) {
                 return &field;
             }
 
-            auto iter = field.find(name.value());
+            auto iter = find_entry(field, name.value());
             if (iter == field.end()) {
                 return nullptr;
             }
             return (void*) &iter->second;
         };
         this->jph_gen_callback = make_gen_callback<false>(
-            [](const auto& field,
+            [find_entry](const auto& field,
                const auto& ygc,
                const auto&,
                yajl_gen handle) {
                 yajlpp_generator gen(handle);
 
                 if (!ygc.ygc_path.empty()) {
-                    auto iter = field.find(ygc.ygc_path.back());
+                    auto iter = find_entry(field, ygc.ygc_path.back());
                     if (iter != field.end()) {
                         gen(iter->second);
                     }

@@ -34,6 +34,7 @@
 
 #include "all_logs_vtab.hh"
 #include "bound_tags.hh"
+#include "ext.access.hh"
 #include "lnav.events.hh"
 #include "lnav.exec-phase.hh"
 #include "lnav.hh"
@@ -393,6 +394,9 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
     bool scroll_downs[LNV__MAX]{};
     std::optional<text_time_translator::row_info> scroll_down_sels[LNV__MAX];
     rebuild_indexes_result_t retval;
+    // Retain format changes from passes that did not settle.
+    static bool pending_format_summary{true};
+    static int summarized_files_generation{0};
     bool is_headless = lnav_data.ld_flags.is_set<lnav_flags::headless>();
 
     if (exec_phase.spinning_up()) {
@@ -432,6 +436,8 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
         textfile_callback cb;
 
         auto rescan_res = tss->rescan_files(cb, deadline);
+        pending_format_summary = pending_format_summary
+            || rescan_res.rr_formats_changed;
         if (rescan_res.rr_new_data) {
             text_view.reload_data();
             retval.rir_changes += rescan_res.rr_new_data;
@@ -553,10 +559,14 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 
     // log_trace("rebuilding logs indexes");
     auto result = lss.rebuild_index(deadline);
-    if (result != logfile_sub_source::rebuild_result::rr_no_change) {
+    pending_format_summary = pending_format_summary
+        || result.rr_format_changes > 0;
+    if (!result.rr_merge_complete
+        || result.rr_change != logfile_sub_source::rebuild_change::none)
+    {
         size_t new_count = lss.text_line_count();
-        auto force
-            = result == logfile_sub_source::rebuild_result::rr_full_rebuild;
+        const auto force = result.rr_change
+            == logfile_sub_source::rebuild_change::full_rebuild;
 
         if (force && scroll_downs[LNV_LOG]
             && log_view.get_top() > vis_line_t(new_count))
@@ -642,6 +652,28 @@ rebuild_indexes(std::optional<ui_clock::time_point> deadline)
 
     if (exec_phase.spinning_up()) {
         log_info("END rebuilding indexes");
+    }
+
+    if (exec_phase.scan_completed() && retval.rir_completed
+        && !retval.rir_rescan_needed && result.rr_merge_complete)
+    {
+        const auto files_generation
+            = lnav_data.ld_log_source.lss_file_generation;
+        if (pending_format_summary
+            || summarized_files_generation != files_generation)
+        {
+            lnav::ext::log_format_counts formats;
+            for (const auto& lf : lnav_data.ld_active_files.fc_files) {
+                if (const auto* format = lf->get_format_ptr()) {
+                    formats[format->get_name()] += 1;
+                }
+            }
+            lnav::ext::update_log_formats(std::move(formats));
+            summarized_files_generation = files_generation;
+            pending_format_summary = false;
+        } else {
+            lnav::ext::retry_registration_write();
+        }
     }
 
     return retval;

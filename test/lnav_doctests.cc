@@ -109,13 +109,13 @@ TEST_CASE("overwritten-logfile") {
     logfile_open_options loo;
     logfile lf(fname, loo);
     auto build_result = lf.rebuild_index();
-    CHECK(build_result == logfile::RR_NEW_LINES);
+    CHECK(build_result.rr_change == logfile::index_change::append);
     CHECK(lf.size() == 1);
 
     sleep(1);
     ofstream(fname) << "test 2\n";
     auto rebuild_result = lf.rebuild_index();
-    CHECK(rebuild_result == logfile::RR_NO_NEW_LINES);
+    CHECK(rebuild_result.rr_change == logfile::index_change::none);
     CHECK(lf.is_closed());
 }
 #endif

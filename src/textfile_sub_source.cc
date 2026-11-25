@@ -980,8 +980,8 @@ textfile_sub_source::prescan_files(textfile_sub_source::scan_callback& callback,
                       fvs->fvs_file->get_stat().st_size,
                       fvs->fvs_file->get_stat().st_mode);
             // Still an entry, because the rescan loop require()s one for
-            // every file it walks, and NO_NEW_LINES is what an inline scan
-            // of a finished file would have returned anyway.
+            // every file it walks, and an unchanged, valid result is what an
+            // inline scan of a finished file would have returned anyway.
             retval[fvs->fvs_file.get()] = prescan_result{};
             continue;
         }
@@ -1289,6 +1289,9 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             continue;
         }
 
+        const auto& rebuild = pre_iter->second.psr_result;
+        retval.rr_formats_changed
+            = retval.rr_formats_changed || rebuild.rr_format_changed;
         if (lf->get_format() != nullptr) {
             iter = this->tss_files.erase(iter);
             this->detach_observer(lf);
@@ -1296,18 +1299,12 @@ textfile_sub_source::rescan_files(textfile_sub_source::scan_callback& callback,
             continue;
         }
 
-        auto new_data = false;
-        switch (pre_iter->second.psr_result) {
-            case logfile::rebuild_result_t::NEW_LINES:
-            case logfile::rebuild_result_t::NEW_ORDER:
-                new_data = true;
-                retval.rr_new_data += 1;
-                break;
-            case logfile::rebuild_result_t::NO_NEW_LINES:
-                this->move_to_init_location(iter);
-                break;
-            default:
-                break;
+        const auto new_data = rebuild.rr_valid
+            && rebuild.rr_change != logfile::index_change::none;
+        if (new_data) {
+            retval.rr_new_data += 1;
+        } else if (rebuild.rr_valid) {
+            this->move_to_init_location(iter);
         }
         callback.scanned_file(lf);
 

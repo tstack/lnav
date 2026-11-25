@@ -887,20 +887,19 @@ public:
 
     Result<shared_buffer_ref, std::string> read_raw_message(const_iterator ll);
 
-    enum class rebuild_result_t {
-        INVALID,
-        NO_NEW_LINES,
-        NEW_LINES,
-        NEW_ORDER,
+    enum class index_change {
+        none,
+        append,
+        reorder,
     };
 
-    /**
-     * Index any new data in the log file.
-     *
-     * @param lo The observer object that will be called regularly during
-     * indexing.
-     * @return True if any new lines were indexed.
-     */
+    struct rebuild_result_t {
+        index_change rr_change{index_change::none};
+        bool rr_valid{true};
+        bool rr_format_changed{false};
+    };
+
+    /** Index new data and report changes to the file's format and index. */
     rebuild_result_t rebuild_index(std::optional<ui_clock::time_point> deadline
                                    = std::nullopt);
 
@@ -1323,7 +1322,8 @@ protected:
      */
     bool process_prefix(shared_buffer_ref& sbr,
                         const line_info& li,
-                        scan_batch_context& sbc);
+                        scan_batch_context& sbc,
+                        rebuild_result_t& rebuild_result);
 
     /**
      * @return Whether anything in the indexing scan still needs this line's
@@ -1504,7 +1504,7 @@ private:
     map_entry_result find_content_map_entry(file_off_t offset,
                                             map_read_requirement req);
 
-    rebuild_result_t build_content_map();
+    index_change build_content_map();
 };
 
 class logline_observer {

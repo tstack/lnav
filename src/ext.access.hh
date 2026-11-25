@@ -32,6 +32,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <string>
 #include <vector>
@@ -41,17 +42,20 @@
 
 namespace lnav::ext {
 
+using log_format_counts = std::map<intern_string_t, int64_t>;
+
 /** The contents of a discovery file. */
 struct instance_record {
     int64_t ir_pid{0};
     std::string ir_version;
     std::string ir_name;
-    std::string ir_cwd;
+    std::filesystem::path ir_cwd;
     std::vector<std::string> ir_paths;
     std::string ir_url;
     int64_t ir_port{0};
     std::string ir_api_key;
     int64_t ir_started{0};
+    log_format_counts ir_log_formats;
 
     static const string_fragment SCHEMA_ID;
     static const typed_json_path_container<instance_record> handlers;
@@ -89,6 +93,16 @@ void register_instance(instance_info ii);
 
 /** Rewrite the discovery file, for example, after the cwd changed. */
 void refresh_instance();
+
+/** Publish the format counts from the most recent settled indexing pass. */
+void update_log_formats(log_format_counts formats);
+
+/**
+ * Retry a pending discovery write without recomputing the format counts.
+ * Only one retry is made after a failed write; the next write from
+ * register_instance(), refresh_instance() or update_log_formats() re-arms it.
+ */
+void retry_registration_write();
 
 /** Remove this instance's discovery file. */
 void unregister_instance();

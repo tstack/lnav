@@ -1642,16 +1642,15 @@ json_path_handler_base::report_min_value_error(yajlpp_parse_context* ypc,
         reason.append("value must be greater than or equal to ")
             .append(lnav::roles::number(fmt::to_string(this->jph_min_value)));
     }
-    ypc->report_error(
-        lnav::console::user_message::error(
-            attr_line_t()
-                .append_quoted(fmt::to_string(value))
-                .append(" is not a valid value for option ")
-                .append_quoted(
-                    lnav::roles::symbol(ypc->get_full_path().to_string())))
-            .with_reason(reason)
-            .with_snippet(ypc->get_snippet())
-            .with_help(this->get_help_text(ypc)));
+    ypc->report_error(lnav::console::user_message::error(
+                          attr_line_t()
+                              .append_quoted(fmt::to_string(value))
+                              .append(" is not a valid value for option ")
+                              .append_quoted(lnav::roles::symbol(
+                                  ypc->get_full_path().to_string())))
+                          .with_reason(reason)
+                          .with_snippet(ypc->get_snippet())
+                          .with_help(this->get_help_text(ypc)));
 }
 
 void

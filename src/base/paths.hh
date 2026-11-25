@@ -51,6 +51,8 @@ std::filesystem::path dotlnav();
 
 std::filesystem::path workdir();
 
+std::filesystem::path current();
+
 /**
  * @return The user's home directory
  */

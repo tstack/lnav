@@ -478,8 +478,7 @@ split(const std::filesystem::path& path,
         // any line past the header has been read.
         while (head_lf->size() < ::logfile::RETRY_MATCH_SIZE) {
             const auto rr = head_lf->rebuild_index();
-            if (rr == ::logfile::rebuild_result_t::NO_NEW_LINES
-                || rr == ::logfile::rebuild_result_t::INVALID)
+            if (!rr.rr_valid || rr.rr_change == ::logfile::index_change::none)
             {
                 break;
             }
@@ -647,7 +646,7 @@ split(const std::filesystem::path& path,
     auto eof = false;
     while (!eof) {
         const auto rr = lf->rebuild_index();
-        if (rr == ::logfile::rebuild_result_t::INVALID || lf->is_closed()) {
+        if (!rr.rr_valid || lf->is_closed()) {
             return Err(fail(lnav::console::user_message::error(
                                 attr_line_t("unable to read file: ")
                                     .append(lnav::roles::file(path.string())))
@@ -669,7 +668,7 @@ split(const std::filesystem::path& path,
             }
             return Err(fail(um));
         }
-        eof = rr == ::logfile::rebuild_result_t::NO_NEW_LINES;
+        eof = rr.rr_change == ::logfile::index_change::none;
         if (on_progress) {
             on_progress(lf->get_index_size());
         }

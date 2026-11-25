@@ -2,14 +2,14 @@
     {
         "top_meta": {
             "time": "2013-06-06 19:13:20.123456",
-            "file": "stdin",
+            "file": "<stdin>",
             "breadcrumbs": [
                 {
-                    "display_value": "stdin",
+                    "display_value": "<stdin>",
                     "search_placeholder": "",
                     "possibilities": [
                         {
-                            "display_value": "stdin"
+                            "display_value": "<stdin>"
                         }
                     ]
                 },

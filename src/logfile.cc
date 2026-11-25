@@ -489,9 +489,8 @@ logfile::apply_stmt_level(size_t line, log_level_t stmt_level)
         return false;
     }
 
-    const auto new_level = stmt_level == LEVEL_UNKNOWN
-        ? format->lf_default_level
-        : stmt_level;
+    const auto new_level
+        = stmt_level == LEVEL_UNKNOWN ? format->lf_default_level : stmt_level;
     const auto old_level = ll.get_msg_level();
     if (old_level == new_level) {
         return false;
@@ -938,7 +937,7 @@ logfile::find_content_map_entry(file_off_t offset, map_read_requirement req)
     return map_entry_not_found{};
 }
 
-logfile::rebuild_result_t
+logfile::index_change
 logfile::build_content_map()
 {
     static auto op = lnav_operation{"build_content_map"};
@@ -1049,7 +1048,7 @@ logfile::build_content_map()
         }
     }
 
-    auto retval = rebuild_result_t::NO_NEW_LINES;
+    auto retval = index_change::none;
     auto full_size = this->get_content_size();
 
     this->lf_lower_bound_entry = std::nullopt;
@@ -1077,7 +1076,7 @@ logfile::build_content_map()
         this->lf_line_ids.clear();
         // Its changes are by line, and the lines are about to be re-read.
         this->lf_metrics.clear();
-        retval = rebuild_result_t::NEW_ORDER;
+        retval = index_change::reorder;
     }
 
     if (this->lf_index_size == full_size) {
@@ -1097,7 +1096,7 @@ logfile::build_content_map()
             this->lf_stmt_ids.clear();
             this->lf_line_ids.clear();
             this->lf_metrics.clear();
-            retval = rebuild_result_t::NEW_ORDER;
+            retval = index_change::reorder;
         }
         this->lf_file_size_at_map_time = full_size;
         return retval;
@@ -1121,7 +1120,7 @@ logfile::build_content_map()
 
     if (this->lf_options.loo_time_range.has_lower_bound()) {
         if (this->lf_options.loo_time_range.tr_begin > end_entry.cme_time) {
-            retval = rebuild_result_t::NEW_ORDER;
+            retval = index_change::reorder;
         } else if (this->lf_index.empty()
                    || this->lf_options.loo_time_range.tr_begin
                        > this->lf_index.back().get_time<>())
@@ -1143,12 +1142,12 @@ logfile::build_content_map()
                 this->lf_lower_bound_entry = low_entry;
                 this->lf_index_size = low_entry.cme_range.fr_offset;
 
-                retval = rebuild_result_t::NEW_ORDER;
+                retval = index_change::reorder;
             }
         }
     }
 
-    if (retval == rebuild_result_t::NEW_ORDER) {
+    if (retval == index_change::reorder) {
         {
             auto los = this->lf_opids.writeAccess();
 
@@ -1458,8 +1457,8 @@ logfile::set_base_time_for(scan_batch_context& sbc, const line_info& li)
     // The piper line timestamp has already been shifted to local time by the
     // line_buffer, so convert it back to UTC to match the other sources.
     time_t file_time = li.li_timestamp.tv_sec != 0
-        ? lnav::to_sys_time(date::local_seconds{std::chrono::seconds{
-                                li.li_timestamp.tv_sec}})
+        ? lnav::to_sys_time(
+              date::local_seconds{std::chrono::seconds{li.li_timestamp.tv_sec}})
               .time_since_epoch()
               .count()
         : this->lf_line_buffer.get_file_time();
@@ -1508,7 +1507,8 @@ logfile::get_content_time_range() const
 bool
 logfile::process_prefix(shared_buffer_ref& sbr,
                         const line_info& li,
-                        scan_batch_context& sbc)
+                        scan_batch_context& sbc,
+                        logfile::rebuild_result_t& rresult)
 {
     static auto max_unrecognized_lines
         = injector::get<const lnav::logfile::config&>()
@@ -1933,6 +1933,11 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                         fmt::to_string(starting_index_size))));
             this->lf_format_match_messages.emplace_back(match_um);
             this->lf_text_format = text_format_t::TF_LOG;
+            if (this->lf_format == nullptr
+                || this->lf_format->get_name() != curr->get_name())
+            {
+                rresult.rr_format_changed = true;
+            }
             this->lf_format = curr->specialized(sbc);
             if (best_format_state != nullptr) {
                 this->lf_format->adopt_scan_state(*best_format_state);
@@ -2172,17 +2177,17 @@ logfile::process_prefix(shared_buffer_ref& sbr,
                 }
                 // The thread id and opid can be on different lines of the
                 // row, so the one this line doesn't have is kept.
-                const auto row_id = [row_start](const line_id_runs& runs,
-                                                const std::optional<string_key>&
-                                                    line_id) {
-                    if (line_id) {
-                        return line_id;
-                    }
-                    const auto* prev = runs.get(row_start);
-                    return prev != nullptr && prev->is_valid()
-                        ? std::make_optional(*prev)
-                        : std::optional<string_key>{};
-                };
+                const auto row_id
+                    = [row_start](const line_id_runs& runs,
+                                  const std::optional<string_key>& line_id) {
+                          if (line_id) {
+                              return line_id;
+                          }
+                          const auto* prev = runs.get(row_start);
+                          return prev != nullptr && prev->is_valid()
+                              ? std::make_optional(*prev)
+                              : std::optional<string_key>{};
+                      };
                 const auto tid
                     = row_id(this->lf_line_ids.li_tids, sbc.sbc_line_tid);
                 const auto opid
@@ -2245,6 +2250,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     this->lf_line_number_memo = {};
     this->lf_time_rollovers.clear();
 
+    rebuild_result_t retval;
+
     if (!this->lf_invalidated_opids.empty()) {
         auto writeOpids = this->lf_opids.writeAccess();
 
@@ -2286,9 +2293,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     if (!this->lf_indexing) {
         if (this->lf_sort_needed) {
             this->lf_sort_needed = false;
-            return rebuild_result_t::NEW_ORDER;
+            retval.rr_change = index_change::reorder;
         }
-        return rebuild_result_t::NO_NEW_LINES;
+        return retval;
     }
 
     if (this->file_options_have_changed()
@@ -2302,16 +2309,16 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     }
     this->lf_zoned_to_local_state = dts_cfg.c_zoned_to_local;
 
-    auto retval = rebuild_result_t::NO_NEW_LINES;
     struct stat st;
 
     this->lf_activity.la_polls += 1;
 
     if (fstat(this->lf_line_buffer.get_fd(), &st) == -1) {
         if (errno == EINTR) {
-            return rebuild_result_t::NO_NEW_LINES;
+            return retval;
         }
-        return rebuild_result_t::INVALID;
+        retval.rr_valid = false;
+        return retval;
     }
 
     const auto is_truncated = st.st_size < this->lf_stat.st_size;
@@ -2362,7 +2369,7 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                      this->lf_stat.st_size,
                      this->lf_stat.st_mtime);
             this->close();
-            return rebuild_result_t::NO_NEW_LINES;
+            return retval;
         }
     }
 
@@ -2482,7 +2489,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                             this->lf_filename_as_string.c_str(),
                             read_result.unwrapErr().c_str());
                         this->close();
-                        return rebuild_result_t::INVALID;
+                        retval.rr_valid = false;
+                        return retval;
                     }
 
                     auto sbr = read_result.unwrap();
@@ -2490,7 +2498,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                         log_info("overwritten file detected, closing -- %s",
                                  this->lf_filename_as_string.c_str());
                         this->close();
-                        return rebuild_result_t::INVALID;
+                        retval.rr_valid = false;
+                        return retval;
                     }
                 } else {
                     this->lf_line_buffer.flush_at(last_line->get_offset());
@@ -2508,7 +2517,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                              this->lf_filename_as_string.c_str(),
                              read_result.unwrapErr().c_str());
                     this->close();
-                    return rebuild_result_t::INVALID;
+                    retval.rr_valid = false;
+                    return retval;
                 }
             } else {
                 this->lf_line_buffer.flush_at(0);
@@ -2588,7 +2598,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                           this->lf_filename_as_string.c_str(),
                           load_result.unwrapErr().c_str());
                 this->close();
-                return rebuild_result_t::INVALID;
+                retval.rr_valid = false;
+                return retval;
             }
 
             auto li = load_result.unwrap();
@@ -2615,7 +2626,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                               this->lf_filename_as_string.c_str(),
                               read_result.unwrapErr().c_str());
                     this->close();
-                    return rebuild_result_t::INVALID;
+                    retval.rr_valid = false;
+                    return retval;
                 }
                 sbr = read_result.unwrap();
             }
@@ -2786,7 +2798,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
                 kept_opids = sbc.sbc_opids;
                 kept_tids = sbc.sbc_tids;
             }
-            sort_needed = this->process_prefix(sbr, li, sbc) || sort_needed;
+            sort_needed = this->process_prefix(sbr, li, sbc, retval)
+                || sort_needed;
             if (uncounted_format != nullptr) {
                 if (this->lf_format.get() == uncounted_format) {
                     sbc.sbc_value_stats.swap(kept_value_stats);
@@ -3136,7 +3149,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             log_info("overwritten file detected, closing -- %s",
                      this->lf_filename_as_string.c_str());
             this->close();
-            return rebuild_result_t::INVALID;
+            retval.rr_valid = false;
+            return retval;
         }
 
         for (size_t lpc = 0; lpc < rolled_back_lines.size()
@@ -3156,9 +3170,9 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
         }
 
         if (sort_needed || begin_size > this->lf_index.size()) {
-            retval = rebuild_result_t::NEW_ORDER;
+            retval.rr_change = index_change::reorder;
         } else {
-            retval = rebuild_result_t::NEW_LINES;
+            retval.rr_change = index_change::append;
         }
 
         if (!this->lf_options.loo_streaming) {
@@ -3175,8 +3189,8 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
             && this->lf_file_size_at_map_time != this->get_content_size())
         {
             switch (this->build_content_map()) {
-                case rebuild_result_t::NEW_ORDER:
-                    retval = rebuild_result_t::NEW_ORDER;
+                case index_change::reorder:
+                    retval.rr_change = index_change::reorder;
                     break;
                 default:
                     break;
@@ -3189,12 +3203,12 @@ logfile::rebuild_index(std::optional<ui_clock::time_point> deadline)
     } else {
         this->lf_stat = st;
         if (this->lf_sort_needed) {
-            retval = rebuild_result_t::NEW_ORDER;
+            retval.rr_change = index_change::reorder;
             this->lf_sort_needed = false;
         }
     }
 
-    this->update_time_order(retval == rebuild_result_t::NEW_ORDER);
+    this->update_time_order(retval.rr_change == index_change::reorder);
 
     this->lf_index_time
         = std::chrono::seconds{this->lf_line_buffer.get_file_time()};
@@ -3407,8 +3421,7 @@ logfile::find_line_number(size_t line_number) const
     }
 
     if (this->lf_format == nullptr || !this->lf_format->lf_formatted_lines) {
-        return this->begin()
-            + std::min(line_number - 1, this->lf_index.size());
+        return this->begin() + std::min(line_number - 1, this->lf_index.size());
     }
 
     // The same counting as get_line_number(), forward from the last answer
@@ -3769,9 +3782,9 @@ logfile::widths_for_display(const metric_display_def& mdd) const
     }
 
     return widths
-        .emplace(key,
-                 metric_display_widths{
-                     value_width, line_width, std::move(columns)})
+        .emplace(
+            key,
+            metric_display_widths{value_width, line_width, std::move(columns)})
         .first->second;
 }
 
@@ -3881,8 +3894,7 @@ logfile::metric_sample_as_shown(uint64_t line_number,
         mpt.mpt_generation = generation;
 
         const auto line_at = [this](size_t pos) -> size_t {
-            return this->lf_time_order.empty() ? pos
-                                               : this->lf_time_order[pos];
+            return this->lf_time_order.empty() ? pos : this->lf_time_order[pos];
         };
         auto pos = this->time_order_lower_bound(time);
         if (pos > 0) {

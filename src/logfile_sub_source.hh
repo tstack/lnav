@@ -316,12 +316,19 @@ public:
 
     void remove_file(std::shared_ptr<logfile> lf);
 
-    enum class rebuild_result {
-        rr_in_progress,
-        rr_no_change,
-        rr_appended_lines,
-        rr_partial_rebuild,
-        rr_full_rebuild,
+    enum class rebuild_change {
+        none,
+        append,
+        partial_rebuild,
+        full_rebuild,
+    };
+
+    struct rebuild_result {
+        rebuild_change rr_change{rebuild_change::none};
+        bool rr_merge_complete{true};
+        size_t rr_format_changes{0};
+        size_t rr_invalidated_files{0};
+        size_t rr_removed_files{0};
     };
 
     rebuild_result rebuild_index(std::optional<ui_clock::time_point> deadline
@@ -864,6 +871,7 @@ public:
     std::function<void(logfile_sub_source&, file_off_t, file_size_t)>
         lss_sorting_observer;
 
+    uint32_t lss_file_generation{0};
     uint32_t lss_index_generation{0};
 
     /**
@@ -1114,8 +1122,7 @@ private:
 
     /** What a parallel pre-scan worked out about one file. */
     struct prescan_result {
-        logfile::rebuild_result_t psr_result{
-            logfile::rebuild_result_t::NO_NEW_LINES};
+        logfile::rebuild_result_t psr_result;
         /**
          * The format's timestamp flags as they stood *before* the scan.  The
          * loop OR's these in ahead of the file's own scan, so caching them
@@ -1205,6 +1212,7 @@ private:
     size_t lss_basename_width = 0;
     size_t lss_filename_width = 0;
     line_context_t lss_line_context{line_context_t::none};
+    size_t lss_removed_files = 0;
     bool lss_force_rebuild{false};
     /** Set by set_levels_changed(), cleared by text_filters_changed(). */
     bool lss_levels_changed{false};

@@ -59,6 +59,20 @@
             "title": "/started",
             "description": "When the server was started, in seconds since the epoch",
             "type": "integer"
+        },
+        "log_formats": {
+            "description": "Open file counts by detected log format, updated after indexing settles",
+            "title": "/log_formats",
+            "type": "object",
+            "patternProperties": {
+                "^(\\w+)$": {
+                    "title": "/log_formats/<format_name>",
+                    "description": "Number of open files detected in this format",
+                    "type": "integer",
+                    "minimum": 1.0
+                }
+            },
+            "additionalProperties": false
         }
     },
     "additionalProperties": false

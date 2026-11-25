@@ -40,6 +40,7 @@
 #include "base/humanize.hh"
 #include "base/humanize.time.hh"
 #include "base/itertools.hh"
+#include "base/itertools.similar.hh"
 #include "base/paths.hh"
 #include "base/result.h"
 #include "base/string_util.hh"
@@ -49,7 +50,6 @@
 #include "file_split.hh"
 #include "fmt/chrono.h"
 #include "fmt/format.h"
-#include "base/itertools.similar.hh"
 #include "lnav.hh"
 #include "lnav_config.hh"
 #include "log_format.hh"
@@ -1099,13 +1099,14 @@ struct subcmd_file_t {
 
     static perform_result_t default_action(const subcmd_file_t& sf)
     {
-        auto um = console::user_message::error(
-                      "expecting an operation to perform on a file")
-                      .with_help(sf.sfi_file_app->get_subcommands({})
-                                 | lnav::itertools::fold(
-                                     subcmd_reducer,
-                                     attr_line_t{"the available operations are:"}))
-                      .move();
+        auto um
+            = console::user_message::error(
+                  "expecting an operation to perform on a file")
+                  .with_help(sf.sfi_file_app->get_subcommands({})
+                             | lnav::itertools::fold(
+                                 subcmd_reducer,
+                                 attr_line_t{"the available operations are:"}))
+                  .move();
 
         return {std::move(um)};
     }
@@ -1152,8 +1153,8 @@ struct subcmd_file_t {
             opts.o_limits.l_bytes = static_cast<uint64_t>(size_res->value);
         }
         if (!sf.sfi_time.empty()) {
-            auto rt_res
-                = relative_time::from_str(string_fragment::from_str(sf.sfi_time));
+            auto rt_res = relative_time::from_str(
+                string_fragment::from_str(sf.sfi_time));
             if (rt_res.isErr()) {
                 auto um = console::user_message::error(
                               attr_line_t("invalid time window: ")
@@ -1204,24 +1205,24 @@ struct subcmd_file_t {
                 range.tr_end = to_us(from_res.unwrap().get_point());
             }
             if (range.tr_end < range.tr_begin) {
-                auto um = console::user_message::error(
-                              attr_line_t("the 'since' time ")
-                                  .append_quoted(
-                                      lnav::roles::symbol(sf.sfi_since))
-                                  .append(" is not before the 'until' time ")
-                                  .append_quoted(
-                                      lnav::roles::symbol(sf.sfi_until)))
-                              .with_note(attr_line_t("the resolved 'since' "
-                                                     "time is ")
-                                             .append_quoted(lnav::roles::symbol(
-                                                 format_time(range.tr_begin))))
-                              .with_note(attr_line_t("the resolved 'until' "
-                                                     "time is ")
-                                             .append_quoted(lnav::roles::symbol(
-                                                 format_time(range.tr_end))))
-                              .with_help("ensure that the 'since' time is "
-                                         "before the 'until' time")
-                              .move();
+                auto um
+                    = console::user_message::error(
+                          attr_line_t("the 'since' time ")
+                              .append_quoted(lnav::roles::symbol(sf.sfi_since))
+                              .append(" is not before the 'until' time ")
+                              .append_quoted(lnav::roles::symbol(sf.sfi_until)))
+                          .with_note(attr_line_t("the resolved 'since' "
+                                                 "time is ")
+                                         .append_quoted(lnav::roles::symbol(
+                                             format_time(range.tr_begin))))
+                          .with_note(attr_line_t("the resolved 'until' "
+                                                 "time is ")
+                                         .append_quoted(lnav::roles::symbol(
+                                             format_time(range.tr_end))))
+                          .with_help(
+                              "ensure that the 'since' time is "
+                              "before the 'until' time")
+                          .move();
 
                 return {std::move(um)};
             }
@@ -1232,10 +1233,10 @@ struct subcmd_file_t {
         auto split_res = file_split::split(
             sf.sfi_path, opts, [show_progress](file_off_t done) {
                 if (show_progress) {
-                    fmt::print(stderr,
-                               FMT_STRING("\rsplitting... {} read\x1b[K"),
-                               humanize::file_size(
-                                   done, humanize::alignment::none));
+                    fmt::print(
+                        stderr,
+                        FMT_STRING("\rsplitting... {} read\x1b[K"),
+                        humanize::file_size(done, humanize::alignment::none));
                     fflush(stderr);
                 }
             });
@@ -1271,11 +1272,10 @@ struct subcmd_file_t {
                 = console::user_message::ok(
                       attr_line_t("no split needed for ")
                           .append(lnav::roles::file(sf.sfi_path)))
-                      .with_reason(
-                          attr_line_t("the file's ")
-                              .append(lnav::roles::number(
-                                  fmt::to_string(sum.s_lines)))
-                              .append(" lines fit in a single piece"))
+                      .with_reason(attr_line_t("the file's ")
+                                       .append(lnav::roles::number(
+                                           fmt::to_string(sum.s_lines)))
+                                       .append(" lines fit in a single piece"))
                       .move();
 
             return {std::move(um)};
@@ -1285,8 +1285,8 @@ struct subcmd_file_t {
             attr_line_t("split ")
                 .append(lnav::roles::file(sf.sfi_path))
                 .append(" into ")
-                .append(lnav::roles::number(
-                    fmt::to_string(sum.s_pieces.size())))
+                .append(
+                    lnav::roles::number(fmt::to_string(sum.s_pieces.size())))
                 .append(" files"));
         for (const auto& piece : sum.s_pieces) {
             auto note = attr_line_t()
@@ -1783,8 +1783,7 @@ struct subcmd_crash_t {
 };
 
 struct subcmd_instances_t {
-    using action_t
-        = std::function<perform_result_t(const subcmd_instances_t&)>;
+    using action_t = std::function<perform_result_t(const subcmd_instances_t&)>;
 
     CLI::App* si_app{nullptr};
     action_t si_action;
@@ -1842,7 +1841,7 @@ struct subcmd_instances_t {
             return false;
         }
         if (lnav::filesystem::is_glob(inst_path)
-            && fnmatch(inst_path.c_str(), query.c_str(), FNM_PATHNAME) == 0)
+            && lnav::filesystem::glob_match(inst_path, query))
         {
             return true;
         }
@@ -1905,9 +1904,8 @@ struct subcmd_instances_t {
 
         if (insts.empty()) {
             auto um = console::user_message::error(
-                          total == 0
-                              ? "no running lnav instances were found"
-                              : "no running lnav instances matched")
+                          total == 0 ? "no running lnav instances were found"
+                                     : "no running lnav instances matched")
                           .move();
             if (total > 0) {
                 um.with_note(
@@ -1916,10 +1914,9 @@ struct subcmd_instances_t {
                         .append(" instance(s) are running, run without "
                                 "filters to see them all"));
             } else {
-                um.with_note(
-                      attr_line_t("instances are registered in: ")
-                          .append(lnav::roles::file(
-                              lnav::ext::instance_dir().string())))
+                um.with_note(attr_line_t("instances are registered in: ")
+                                 .append(lnav::roles::file(
+                                     lnav::ext::instance_dir().string())))
                     .with_help(
                         "an instance is registered while its external-access "
                         "server is open, which is the default when the TUI is "
@@ -1937,11 +1934,10 @@ struct subcmd_instances_t {
                 txt.append(rec.ir_url).append("\n");
             } else {
                 auto ago = humanize::time::point::from_tv(
-                               timeval{static_cast<time_t>(rec.ir_started),
-                                       0})
+                               timeval{static_cast<time_t>(rec.ir_started), 0})
                                .as_time_ago();
                 txt.append(lnav::roles::number(
-                           fmt::format(FMT_STRING("{:>8}"), rec.ir_pid)))
+                               fmt::format(FMT_STRING("{:>8}"), rec.ir_pid)))
                     .append("  ")
                     .append(lnav::roles::identifier(rec.ir_name))
                     .append("  ")
@@ -2046,10 +2042,9 @@ describe_cli(CLI::App& app, int argc, char* argv[])
             "-S,--since",
             file_args.sfi_since,
             "only write messages at or after this time (e.g. '1h ago')");
-        sub_split->add_option(
-            "-U,--until",
-            file_args.sfi_until,
-            "only write messages at or before this time");
+        sub_split->add_option("-U,--until",
+                              file_args.sfi_until,
+                              "only write messages at or before this time");
         sub_split->add_option("-o,--output-dir",
                               file_args.sfi_output_dir,
                               "the directory to write the files to");
