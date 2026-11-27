@@ -833,17 +833,48 @@ layout_views()
 
     bool breadcrumb_open = (lnav_data.ld_mode == ln_mode_t::BREADCRUMBS);
 
-    auto prompt_height
-        = prompt.p_editor.is_enabled() ? prompt.p_editor.tc_height : 1;
+    const auto max_log = lnav_data.ld_max_log_space;
+    // In max log space mode, the prompt row is only shown while the prompt is
+    // open or a one-line message is still fresh.  A reply to something the
+    // user just did can go away quickly; a spontaneous message gets longer
+    // since the user might not be looking at the screen.
+    auto prompt_msg_fresh = false;
+    if (max_log && prompt.p_editor.has_inactive_value()) {
+        const auto set_time = prompt.p_editor.get_inactive_set_time();
+        // Classify the message once, when it is first seen.  Doing it every
+        // frame would reclassify it as spontaneous after the next keypress.
+        static std::remove_const_t<decltype(set_time)> classified_time;
+        static auto classified_reply = false;
+        if (classified_time != set_time) {
+            classified_time = set_time;
+            classified_reply = set_time >= lnav_data.ld_last_user_input
+                && set_time - lnav_data.ld_last_user_input
+                    < PROMPT_REPLY_WINDOW;
+        }
+        const auto timeout
+            = classified_reply ? PROMPT_REPLY_TIMEOUT : USER_MESSAGE_TIMEOUT;
+
+        prompt_msg_fresh = std::chrono::steady_clock::now() - set_time < timeout;
+    }
+    auto prompt_visible
+        = !max_log || prompt.p_editor.is_enabled() || prompt_msg_fresh;
+    auto prompt_height = prompt.p_editor.is_enabled()
+        ? prompt.p_editor.tc_height
+        : (prompt_visible ? 1 : 0);
     auto min_height = std::min(1U + 10 + 2U, height);
     auto bottom = clamped<int>::from(height, min_height, height);
 
     bottom -= prompt_height;
+    prompt.p_editor.set_visible(prompt_visible);
     prompt.p_editor.set_y(bottom);
     prompt.p_editor.set_width(width);
     prompt.p_editor.ensure_cursor_visible();
 
     breadcrumb_view->set_width(width);
+    breadcrumb_view->set_visible(!max_log || breadcrumb_open);
+    breadcrumb_view->set_y(max_log ? 0 : 1);
+    lnav_data.ld_status[LNS_TOP].set_visible(!max_log);
+    lnav_data.ld_views[LNV_LOG].set_tail_space(max_log ? 0_vl : 2_vl);
 
     auto vis = bottom.try_consume(um_height);
     lnav_data.ld_user_message_view.set_y(bottom);
@@ -851,7 +882,10 @@ layout_views()
 
     lnav_data.ld_status[LNS_TOP].set_width(width);
 
-    bottom -= 1;
+    if (!max_log) {
+        bottom -= 1;
+    }
+    lnav_data.ld_status[LNS_BOTTOM].set_visible(!max_log);
     lnav_data.ld_status[LNS_BOTTOM].set_y(bottom);
     lnav_data.ld_status[LNS_BOTTOM].set_width(width);
     lnav_data.ld_status[LNS_BOTTOM].set_enabled(!config_panel_open
@@ -930,8 +964,9 @@ layout_views()
     lnav_data.ld_status[LNS_DB].set_width(width);
     lnav_data.ld_status[LNS_DB].set_visible(vis);
 
-    vis = bottom.try_consume(filter_height + (config_panel_open ? 1 : 0)
-                             + (filters_supported ? 1 : 0));
+    vis = bottom.try_consume(
+        filter_height + (config_panel_open ? 1 : 0)
+        + (filters_supported && (!max_log || config_panel_open) ? 1 : 0));
     if (!vis && lnav_data.ld_mode == ln_mode_t::FILE_DETAILS) {
         filter_height = 5;
         vis = bottom.try_consume(filter_height + (config_panel_open ? 1 : 0)
@@ -964,7 +999,8 @@ layout_views()
     lnav_data.ld_status[LNS_FILTER_HELP].set_y(bottom + 1);
     lnav_data.ld_status[LNS_FILTER_HELP].set_width(width);
 
-    lnav_data.ld_status[LNS_FILTER].set_visible(vis);
+    lnav_data.ld_status[LNS_FILTER].set_visible(
+        vis && (!max_log || config_panel_open));
     lnav_data.ld_status[LNS_FILTER].set_enabled(config_panel_open);
     lnav_data.ld_status[LNS_FILTER].set_y(bottom);
     lnav_data.ld_status[LNS_FILTER].set_width(width);
@@ -992,8 +1028,33 @@ layout_views()
     }
 
     auto bottom_used = bottom - vis_line_t(height);
+    // A height of zero means "don't draw", and a negative height is relative
+    // to the bottom of the window.  When nothing is reserved below the views
+    // (max log space), use an absolute height instead.
+    const auto view_y = max_log ? 0 : 2;
+    const auto view_height
+        = bottom_used < 0_vl ? vis_line_t(bottom_used)
+                             : std::max(1_vl, vis_line_t(height - view_y));
     for (auto& tc : lnav_data.ld_views) {
-        tc.set_height(vis_line_t(bottom_used));
+        vis_line_t old_height;
+        unsigned long old_width;
+
+        tc.get_dimensions(old_height, old_width);
+        // If the view was showing its last row, keep it pinned to the bottom
+        // when the view is resized by toggling max log space.
+        const auto was_at_end = tc.get_inner_height() > 0_vl
+            && tc.get_top() >= tc.get_top_for_last_row();
+
+        tc.set_y(view_y);
+        tc.set_height(view_height);
+
+        vis_line_t new_height;
+        unsigned long new_width;
+
+        tc.get_dimensions(new_height, new_width);
+        if (was_at_end && new_height != old_height) {
+            tc.set_top_for_last_row();
+        }
     }
 }
 

@@ -163,7 +163,7 @@
   Clear all sticky header bookmarks in the current view
 
   **See Also**
-    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -251,7 +251,7 @@
       :clear-highlight foobar
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -274,7 +274,7 @@
       :clear-highlight-field sc_status
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight_field`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`highlight_field`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -316,7 +316,7 @@
     * **label\*** --- The label of the metric to remove
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`timeline_metric_sql`, :ref:`timeline_metric`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`timeline_metric_sql`, :ref:`timeline_metric`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -687,7 +687,7 @@
   Disable word-wrapping for the current view
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -786,7 +786,7 @@
   Enable word-wrapping for the current view
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`disable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`disable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1149,7 +1149,7 @@
       :hide-fields syslog_log.log_procname
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`show_fields`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`show_fields`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1188,7 +1188,7 @@
       :hide-in-timeline logfile thread
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`show_in_timeline`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`show_in_timeline`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1282,7 +1282,7 @@
       :highlight \d{3,}
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`clear_highlight`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_highlight`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1312,7 +1312,7 @@
       :highlight-field --color=green sc_status ^2.*
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`clear_highlight_field`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_highlight_field`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1699,7 +1699,7 @@
   Do a full redraw of the screen
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1869,7 +1869,7 @@
     * **mode\*** --- The display mode
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1909,7 +1909,7 @@
       :show-fields log_procname
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1948,7 +1948,7 @@
       :show-in-timeline logfile thread
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_in_timeline`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`show_only_in_timeline`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_in_timeline`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`show_only_in_timeline`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -1984,7 +1984,7 @@
       :show-only-in-timeline opid
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -2033,7 +2033,7 @@
       :spectrogram sc_bytes
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -2125,7 +2125,7 @@
       :timeline-metric cpu.cpu_pct
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`clear_timeline_metric`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_timeline_metric`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -2149,7 +2149,7 @@
       :timeline-metric-sql rss SELECT log_time, rss FROM procstate_procs WHERE proc='lnav'
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`clear_timeline_metric`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`clear_timeline_metric`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
 
 ----
 
@@ -2180,6 +2180,19 @@
 ----
 
 
+.. _toggle_max_log_space:
+
+:toggle-max-log-space
+^^^^^^^^^^^^^^^^^^^^^
+
+  Toggle a mode that hides the status bars, breadcrumb bar, and hints so that the log view can use as much of the screen as possible
+
+  **See Also**
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`, :ref:`zoom_to`
+
+----
+
+
 .. _toggle_sticky_header:
 
 :toggle-sticky-header
@@ -2188,7 +2201,7 @@
   Toggle the sticky header state for the focused line in the current view
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`zoom_to`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`hide_unmarked_lines`, :ref:`mark`, :ref:`next_mark`, :ref:`prev_mark`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`zoom_to`
 
 ----
 
@@ -2568,7 +2581,7 @@
       :zoom-to +
 
   **See Also**
-    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_sticky_header`
+    :ref:`clear_all_sticky_headers`, :ref:`enable_word_wrap`, :ref:`hide_fields`, :ref:`redraw`, :ref:`set_text_view_mode`, :ref:`spectrogram`, :ref:`toggle_max_log_space`, :ref:`toggle_sticky_header`
 
 ----
 

@@ -389,6 +389,8 @@ can always use [37m[40m q [0m to pop the top view off of the stack.
                 line instead of keeping it fixed at the top of the
                 current screen.                                   
 [1m F2             Toggle mouse support.                             [0m
+[1m Ctrl-K         Toggle maximum log space mode, which hides        [0m
+[1m                everything except the log content.                [0m
 
 [4mQuery[0m
 
@@ -825,7 +827,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:hide-unmarked-lines[0m, [1m:mark[0m, 
   [1m:next-mark[0m, [1m:prev-mark[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
-  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:toggle-max-log-space[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4mclear-breakpoint[0m[4m [0m[4mpattern[0m[4m1[0m[4m [[0m[4m...[0m[4m [0m[4mpattern[0m[4mN[0m[4m][0m
 ══════════════════════════════════════════════════════════════════════
@@ -875,8 +877,8 @@ For support questions, email:
             :highlight
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:highlight[0m, 
-  [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, 
-  [1m:zoom-to[0m
+  [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To clear the highlight with the pattern 'foobar':
    [37m[40m:[0m[1m[36m[40mclear-highlight[0m[37m[40m foobar                           [0m
@@ -891,7 +893,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
   [1m:highlight-field[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
-  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:toggle-max-log-space[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To clear the highlights for the 'sc_status' field:
    [37m[40m:[0m[1m[36m[40mclear-highlight-field[0m[37m[40m sc_status                  [0m
@@ -919,7 +921,8 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
   [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:timeline-metric[0m, 
-  [1m:timeline-metric-sql[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:timeline-metric-sql[0m, [1m:toggle-max-log-space[0m, [1m:toggle-sticky-header[0m, 
+  [1m:zoom-to[0m
 
 [4m:[0m[1;4mclose[0m[4m [0m[4mpath[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1168,7 +1171,8 @@ For support questions, email:
   Disable word-wrapping for the current view
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
-  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4mecho[0m[4m [[0m[4m-n[0m[4m] [0m[4mmsg[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1238,7 +1242,8 @@ For support questions, email:
   Enable word-wrapping for the current view
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:disable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
-  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4meval[0m[4m [0m[4mcommand[0m
 ══════════════════════════════════════════════════════════════════════
@@ -1514,8 +1519,8 @@ For support questions, email:
                name and a dot to hide any field.
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:redraw[0m, 
-  [1m:set-text-view-mode[0m, [1m:show-fields[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, 
-  [1m:zoom-to[0m
+  [1m:set-text-view-mode[0m, [1m:show-fields[0m, [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExamples[0m
 #1 To hide the log_procname fields in all formats:
    [37m[40m:[0m[1m[36m[40mhide-fields[0m[37m[40m log_procname                         [0m
@@ -1547,7 +1552,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
   [1m:set-text-view-mode[0m, [1m:show-in-timeline[0m, [1m:spectrogram[0m, 
-  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:toggle-max-log-space[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To hide logfile and thread rows:
    [37m[40m:[0m[1m[36m[40mhide-in-timeline[0m[37m[40m logfile thread                  [0m
@@ -1610,7 +1615,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:clear-highlight[0m, [1m:enable-word-wrap[0m, 
   [1m:hide-fields[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
-  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:toggle-max-log-space[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To highlight numbers with three or more digits:
    [37m[40m:[0m[1m[36m[40mhighlight[0m[37m[40m [0m[1m[37m[40m\d[0m[1m[32m[40m{[0m[37m[40m3,[0m[1m[32m[40m}[0m[37m[40m                                 [0m
@@ -1632,7 +1637,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:clear-highlight-field[0m, [1m:enable-word-wrap[0m, 
   [1m:hide-fields[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
-  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:toggle-max-log-space[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To color status values that start with '2' green:
    [37m[40m:[0m[1m[36m[40mhighlight-field[0m[37m[40m --color=green sc_status [0m[1m[36m[40m^[0m[37m[40m2[0m[1m[36m[40m.[0m[1m[36m[40m*[0m[37m[40m     [0m
@@ -1925,7 +1930,8 @@ For support questions, email:
   Do a full redraw of the screen
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
-  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4mrelative-goto[0m[4m [0m[4mline-count|N%[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2027,7 +2033,7 @@ For support questions, email:
          [4mValues[0m: [1mraw[0m|[1mrendered[0m
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
-  [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4msh[0m[4m [0m[4m--name=<name>[0m[4m [0m[4mcmdline[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2050,7 +2056,8 @@ For support questions, email:
   [4mfield-name[0m   The name of the field to show
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
-  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To show all the log_procname fields in all formats:
    [37m[40m:[0m[1m[36m[40mshow-fields[0m[37m[40m log_procname                         [0m
@@ -2078,7 +2085,8 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
   [1m:hide-in-timeline[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, 
-  [1m:show-only-in-timeline[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:show-only-in-timeline[0m, [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To show logfile and thread rows:
    [37m[40m:[0m[1m[36m[40mshow-in-timeline[0m[37m[40m logfile thread                  [0m
@@ -2103,7 +2111,8 @@ For support questions, email:
              [4mValues[0m: [1mlogfile[0m|[1mthread[0m|[1mopid[0m|[1mtag[0m|[1mpartition[0m|[1msearch[0m
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
-  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, 
+  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To show only opid rows:
    [37m[40m:[0m[1m[36m[40mshow-only-in-timeline[0m[37m[40m opid                       [0m
@@ -2136,7 +2145,8 @@ For support questions, email:
                visualize.
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
-  [1m:set-text-view-mode[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:set-text-view-mode[0m, [1m:toggle-max-log-space[0m, [1m:toggle-sticky-header[0m, 
+  [1m:zoom-to[0m
 [4mExample[0m
 #1 To visualize the sc_bytes field in the access_log format:
    [37m[40m:[0m[1m[36m[40mspectrogram[0m[37m[40m sc_bytes                             [0m
@@ -2196,7 +2206,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:clear-timeline-metric[0m, [1m:enable-word-wrap[0m, 
   [1m:hide-fields[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
-  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:toggle-max-log-space[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 To show the cpu_pct column from cpu.csv:
    [37m[40m:[0m[1m[36m[40mtimeline-metric[0m[37m[40m cpu.cpu_pct                      [0m
@@ -2214,7 +2224,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:clear-timeline-metric[0m, [1m:enable-word-wrap[0m, 
   [1m:hide-fields[0m, [1m:redraw[0m, [1m:set-text-view-mode[0m, [1m:spectrogram[0m, 
-  [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+  [1m:toggle-max-log-space[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
 [4mExample[0m
 #1 Plot rss from procstate rows:
    [37m[40m:[0m[1m[36m[40mtimeline-metric-sql[0m[37m[40m rss SELECT log_time, rss FROM procstate_procs WHERE proc='lnav'[0m
@@ -2237,6 +2247,14 @@ For support questions, email:
   [1m:filter-context[0m, [1m:filter-in[0m, [1m:filter-out[0m, [1m:hide-lines-after[0m, 
   [1m:hide-lines-before[0m, [1m:hide-unmarked-lines[0m, [1m:set-min-log-level[0m
 
+[4m:[0m[1;4mtoggle-max-log-space[0m
+══════════════════════════════════════════════════════════════════════
+  Toggle a mode that hides the status bars, breadcrumb bar, and
+  hints so that the log view can use as much of the screen as possible
+[4mSee Also[0m
+  [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m, [1m:zoom-to[0m
+
 [4m:[0m[1;4mtoggle-sticky-header[0m
 ══════════════════════════════════════════════════════════════════════
   Toggle the sticky header state for the focused line in the current
@@ -2244,7 +2262,7 @@ For support questions, email:
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, 
   [1m:hide-unmarked-lines[0m, [1m:mark[0m, [1m:next-mark[0m, [1m:prev-mark[0m, [1m:redraw[0m, 
-  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:zoom-to[0m
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, [1m:zoom-to[0m
 
 [4m:[0m[1;4mtoggle-view[0m[4m [0m[4mview-name[0m
 ══════════════════════════════════════════════════════════════════════
@@ -2551,7 +2569,8 @@ For support questions, email:
                [4mValues[0m: [1m1-second[0m|[1m30-second[0m|[1m1-minute[0m|[1m5-minute[0m|[1m15-minute[0m|[1m1-hour[0m|[1m4-hour[0m|[1m8-hour[0m|[1m1-day[0m|[1m1-week[0m|[1m1-month[0m|[1m1-year[0m
 [4mSee Also[0m
   [1m:clear-all-sticky-headers[0m, [1m:enable-word-wrap[0m, [1m:hide-fields[0m, [1m:redraw[0m, 
-  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-sticky-header[0m
+  [1m:set-text-view-mode[0m, [1m:spectrogram[0m, [1m:toggle-max-log-space[0m, 
+  [1m:toggle-sticky-header[0m
 [4mExamples[0m
 #1 To set the zoom level to '1-week':
    [37m[40m:[0m[1m[36m[40mzoom-to[0m[37m[40m 1-week                                   [0m

@@ -121,6 +121,21 @@ struct key_repeat_history {
     };
 };
 
+/** How long a multi-line message stays in the user message panel. */
+inline constexpr auto USER_MESSAGE_TIMEOUT = std::chrono::seconds(20);
+
+/**
+ * How long a one-line prompt message stays visible in max-log-space mode when
+ * it was set in reply to user input.
+ */
+inline constexpr auto PROMPT_REPLY_TIMEOUT = std::chrono::seconds(5);
+
+/**
+ * A prompt message set within this long after the last keypress/click is
+ * considered to be a reply to that input.
+ */
+inline constexpr auto PROMPT_REPLY_WINDOW = std::chrono::seconds(1);
+
 struct lnav_data_t {
     std::map<std::string, std::list<session_pair_t>> ld_session_id;
     lnav::time64_t ld_session_time;
@@ -157,6 +172,7 @@ struct lnav_data_t {
     timeline_status_source ld_timeline_status_source;
     db_status_source ld_db_status_source;
     bool ld_preview_hidden;
+    bool ld_max_log_space{false};
     int64_t ld_preview_generation{0};
     action_broadcaster<listview_curses> ld_scroll_broadcaster;
     action_broadcaster<listview_curses> ld_view_stack_broadcaster;
@@ -181,6 +197,7 @@ struct lnav_data_t {
     textview_curses ld_user_message_view;
     std::chrono::time_point<std::chrono::steady_clock>
         ld_user_message_expiration;
+    std::chrono::time_point<std::chrono::steady_clock> ld_last_user_input;
     textview_curses ld_spectro_details_view;
     plain_text_source ld_spectro_no_details_source;
     textview_curses ld_timeline_details_view;

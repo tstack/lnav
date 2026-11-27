@@ -933,11 +933,20 @@ com_save_to(exec_context& ec,
         {
             bottom = inner_height - 1_vl;
         }
+        auto dim = tc->get_dimensions();
+        if (to_term && lnav_data.ld_max_log_space
+            && !lnav_data.ld_flags.is_set<lnav_flags::headless>())
+        {
+            // The view is taller in max-log-space mode, so use the height
+            // that it has when the status bars are shown to get the same
+            // output.
+            dim.first = vis_line_t(ncplane_dim_y(lnav_data.ld_window)) - 5_vl;
+            bottom = std::min(bottom, top + dim.first - 1_vl);
+        }
         auto screen_height = inner_height == 0 ? 0 : bottom - top + 1;
         auto y = 0_vl;
         auto wrapped_count = 0_vl;
         std::vector<attr_line_t> rows(screen_height);
-        auto dim = tc->get_dimensions();
         attr_line_t ov_al;
 
         auto* los = tc->get_overlay_source();

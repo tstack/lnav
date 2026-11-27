@@ -381,13 +381,23 @@ public:
     void set_inactive_value(const std::string& str)
     {
         this->tc_inactive_value.with_ansi_string(str);
+        this->tc_inactive_set_time = std::chrono::steady_clock::now();
         this->set_needs_update();
     }
 
     void set_inactive_value(const attr_line_t& al)
     {
         this->tc_inactive_value = al;
+        this->tc_inactive_set_time = std::chrono::steady_clock::now();
         this->set_needs_update();
+    }
+
+    bool has_inactive_value() const { return !this->tc_inactive_value.empty(); }
+
+    std::chrono::time_point<std::chrono::steady_clock>
+    get_inactive_set_time() const
+    {
+        return this->tc_inactive_set_time;
     }
 
     void clear_alt_value()
@@ -466,6 +476,7 @@ public:
 
     std::optional<std::vector<attr_line_t>> tc_notice;
     attr_line_t tc_inactive_value;
+    std::chrono::time_point<std::chrono::steady_clock> tc_inactive_set_time;
     attr_line_t tc_alt_value;
 
     std::string tc_search;

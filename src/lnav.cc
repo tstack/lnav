@@ -309,7 +309,7 @@ show_user_message(attr_line_t al)
     lnav_data.ld_user_message_source.replace_with(al.rtrim());
     lnav_data.ld_user_message_view.reload_data();
     lnav_data.ld_user_message_expiration
-        = std::chrono::steady_clock::now() + 20s;
+        = std::chrono::steady_clock::now() + USER_MESSAGE_TIMEOUT;
 }
 
 static auto nc_debug = false;
@@ -2491,6 +2491,7 @@ VALUES ('org.lnav.mouse-support', -1, DATETIME('now', '+1 minute'),
 
                 auto op_guard = lnav_opid_guard::internal(op);
                 got_user_input = true;
+                lnav_data.ld_last_user_input = std::chrono::steady_clock::now();
                 ncinput nci;
                 auto old_gen = lnav_data.ld_active_files.fc_files_generation;
                 while (notcurses_get_nblock(sc.get_notcurses(), &nci) > 0) {

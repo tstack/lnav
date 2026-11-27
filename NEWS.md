@@ -2,6 +2,9 @@
 ## lnav v0.15.0
 
 Features:
+* Added the `:toggle-max-log-space` command, bound to `CTRL-K`
+  by default, to hide everything except the log content so that
+  the log view can use as much of the screen as possible.
 * The source locations in stack trace frames are now underlined
   in the LOG view and clicking one opens the file at that line
   in your editor.  Java/Kotlin, Python, Rust, Go, Node.js, .NET,

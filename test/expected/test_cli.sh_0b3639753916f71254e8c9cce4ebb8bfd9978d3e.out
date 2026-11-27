@@ -9483,6 +9483,11 @@
                     "command": ":toggle-filtering",
                     "alt-msg": ""
                 },
+                "x0b": {
+                    "id": "",
+                    "command": ":toggle-max-log-space",
+                    "alt-msg": ""
+                },
                 "x0c": {
                     "id": "",
                     "command": ":write-screen-to -",
